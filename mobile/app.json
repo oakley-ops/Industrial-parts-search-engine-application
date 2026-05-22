@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Parts Finder",
+    "slug": "industrial-parts-finder",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": { "backgroundColor": "#1e40af" },
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.oakleyops.partsfinder" },
+    "android": { "adaptiveIcon": { "backgroundColor": "#1e40af" }, "package": "com.oakleyops.partsfinder" },
+    "plugins": ["expo-router"],
+    "scheme": "partsfinder",
+    "experiments": { "typedRoutes": true }
+  }
+}
