@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import configuration from './config/configuration';
 import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
@@ -18,18 +20,22 @@ import { AlertsModule } from './alerts/alerts.module';
         type: 'postgres',
         url: config.get('database.url'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
+        synchronize: process.env.NODE_ENV !== 'production',
         ssl: config.get('database.ssl') ? { rejectUnauthorized: false } : false,
         logging: false,
       }),
       inject: [ConfigService],
     }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     RedisModule,
     AuthModule,
     UsersModule,
     VendorsModule,
     QuotesModule,
     AlertsModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}
