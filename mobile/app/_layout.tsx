@@ -1,9 +1,24 @@
-import { Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Stack, router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { getToken } from '../services/api';
 
-export default function Layout() {
+export default function RootLayout() {
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    getToken().then(token => {
+      if (!token) router.replace('/login');
+      setChecked(true);
+    });
+  }, []);
+
+  if (!checked) return null;
+
   return (
-    <Stack>
-      <Stack.Screen name="search" options={{ title: 'Parts Search' }} />
-    </Stack>
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false }} />
+    </>
   );
 }

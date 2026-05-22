@@ -1,20 +1,15 @@
 {
   "expo": {
-    "name": "Industrial Parts Search",
-    "slug": "industrial-parts-search",
+    "name": "Parts Finder",
+    "slug": "industrial-parts-finder",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "industrialparts",
-    "platforms": ["ios", "android"],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.industrialparts.search"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.industrialparts.search"
-    }
+    "userInterfaceStyle": "light",
+    "splash": { "backgroundColor": "#1e40af" },
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.oakleyops.partsfinder" },
+    "android": { "adaptiveIcon": { "backgroundColor": "#1e40af" }, "package": "com.oakleyops.partsfinder" },
+    "plugins": ["expo-router"],
+    "scheme": "partsfinder",
+    "experiments": { "typedRoutes": true }
   }
 }
