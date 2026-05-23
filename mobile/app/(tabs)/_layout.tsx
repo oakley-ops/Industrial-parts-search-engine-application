@@ -1,7 +1,20 @@
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect } from 'react';
+import { getToken } from '../../services/api';
+import { registerForPushNotifications } from '../../services/notifications';
 
 export default function TabsLayout() {
+  useEffect(() => {
+    getToken().then(token => {
+      if (!token) {
+        router.replace('/login');
+      } else {
+        registerForPushNotifications().catch(() => {});
+      }
+    });
+  }, []);
+
   return (
     <Tabs screenOptions={{
       headerStyle: { backgroundColor: '#1e40af' },

@@ -5,16 +5,32 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "splash": { "backgroundColor": "#1e40af" },
-    "ios": { "supportsTablet": false, "bundleIdentifier": "com.oakleyops.partsfinder" },
-    "android": { "adaptiveIcon": { "backgroundColor": "#1e40af" }, "package": "com.oakleyops.partsfinder" },
-    "plugins": ["expo-router", "expo-notifications"],
+    "splash": {
+      "backgroundColor": "#1e40af"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.oakleyops.partsfinder"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1e40af"
+      },
+      "package": "com.oakleyops.partsfinder"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "expo-secure-store"
+    ],
     "scheme": "partsfinder",
     "extra": {
       "eas": {
         "projectId": "REPLACE_WITH_YOUR_EXPO_PROJECT_ID"
       }
     },
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

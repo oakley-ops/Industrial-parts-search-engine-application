@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { searchParts } from '../../services/api';
@@ -20,7 +20,10 @@ export default function SearchScreen() {
   };
 
   const renderItem = ({ item }: { item: SearchResult }) => (
-    <TouchableOpacity style={s.card} onPress={() => router.push({ pathname: '/part/[id]', params: { id: item.vendorSku || item.partNumber } })}>
+    <TouchableOpacity style={s.card} onPress={() => router.push({
+      pathname: '/part/[id]',
+      params: { id: item.vendorSku || item.partNumber, imageUrl: item.imageUrl || '' },
+    })}>
       <View style={s.cardTop}>
         <View style={s.badge}><Text style={s.badgeText}>{item.vendorName}</Text></View>
         <View style={[s.stockBadge, { backgroundColor: item.inStock ? '#dcfce7' : '#fef3c7' }]}>
@@ -29,13 +32,22 @@ export default function SearchScreen() {
           </Text>
         </View>
       </View>
-      <Text style={s.name} numberOfLines={2}>{item.name}</Text>
-      {item.vendorSku ? <Text style={s.sku}>SKU: {item.vendorSku}</Text> : null}
-      <View style={s.cardBottom}>
-        {item.price !== null
-          ? <Text style={s.price}>${item.price.toFixed(2)}</Text>
-          : <Text style={s.noPrice}>Price on request</Text>}
-        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+      <View style={s.cardBody}>
+        {item.imageUrl ? (
+          <Image source={{ uri: item.imageUrl }} style={s.thumb} resizeMode="contain" />
+        ) : (
+          <View style={s.thumbPlaceholder}><Ionicons name="cube-outline" size={28} color="#d1d5db" /></View>
+        )}
+        <View style={{ flex: 1 }}>
+          <Text style={s.name} numberOfLines={2}>{item.name}</Text>
+          {item.vendorSku ? <Text style={s.sku}>SKU: {item.vendorSku}</Text> : null}
+          <View style={s.cardBottom}>
+            {item.price !== null
+              ? <Text style={s.price}>${item.price.toFixed(2)}</Text>
+              : <Text style={s.noPrice}>Price on request</Text>}
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </View>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -94,7 +106,10 @@ const s = StyleSheet.create({
   chip: { paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#eff6ff', borderRadius: 20, borderWidth: 1, borderColor: '#bfdbfe' },
   chipText: { color: '#1e40af', fontSize: 12, fontWeight: '600' },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06 },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  cardBody: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  thumb: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: '#f3f4f6', backgroundColor: '#fafafa' },
+  thumbPlaceholder: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: '#f3f4f6', backgroundColor: '#fafafa', justifyContent: 'center', alignItems: 'center' },
   badge: { backgroundColor: '#1e40af', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   stockBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },

@@ -28,6 +28,7 @@ export interface SearchResult {
   price: number | null;
   inStock: boolean;
   productUrl: string;
+  imageUrl?: string;
 }
 
 export abstract class BaseScraper implements OnApplicationShutdown {

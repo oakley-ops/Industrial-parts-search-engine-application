@@ -2,6 +2,7 @@ export interface SearchResult {
   vendorSlug: string; vendorName: string; partNumber: string;
   vendorSku: string; name: string; description: string;
   price: number | null; inStock: boolean; productUrl: string;
+  imageUrl?: string;
 }
 
 export interface PriceResult {

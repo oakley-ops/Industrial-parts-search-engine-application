@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getPricesForPart, getQuotes, createQuote, addLineItem } from '../../services/api';
@@ -13,7 +13,7 @@ const SOURCE = {
 };
 
 export default function PartDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, imageUrl } = useLocalSearchParams<{ id: string; imageUrl?: string }>();
   const [prices, setPrices] = useState<PriceResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -86,6 +86,11 @@ export default function PartDetailScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+          {imageUrl ? (
+            <View style={s.imageBanner}>
+              <Image source={{ uri: imageUrl }} style={s.partImage} resizeMode="contain" />
+            </View>
+          ) : null}
           {best && (
             <View style={s.bestBanner}>
               <Text style={{ color: '#93c5fd', fontSize: 12, fontWeight: '600' }}>💰 BEST PRICE</Text>
@@ -181,6 +186,8 @@ const s = StyleSheet.create({
   headerSub: { color: '#93c5fd', fontSize: 12 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, padding: 32 },
   loadingText: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  imageBanner: { backgroundColor: '#fff', borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6' },
+  partImage: { width: '100%', height: 160 },
   bestBanner: { backgroundColor: '#1e40af', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 16 },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6', elevation: 2 },
   bestCard: { borderColor: '#1e40af', borderWidth: 2 },
