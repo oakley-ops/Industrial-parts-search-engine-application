@@ -3,7 +3,9 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, Alert, Image,
 } from 'react-native';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { identifyPart } from '../services/api';
@@ -42,6 +44,33 @@ export default function CameraScreen() {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.6 });
       setPreview(photo.uri);
       const res = await identifyPart(photo.base64!, mode);
+      setResult(res);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Could not process image');
+      setPreview(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pickFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow photo library access to pick images.');
+      return;
+    }
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.6,
+      base64: true,
+    });
+    if (picked.canceled || !picked.assets[0]) return;
+    const asset = picked.assets[0];
+    setLoading(true);
+    try {
+      const base64 = asset.base64 ?? await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 });
+      setPreview(asset.uri);
+      const res = await identifyPart(base64, mode);
       setResult(res);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not process image');
@@ -168,6 +197,11 @@ export default function CameraScreen() {
       </CameraView>
 
       <View style={s.captureRow}>
+        <TouchableOpacity style={s.galleryBtn} onPress={pickFromLibrary} disabled={loading}>
+          <Ionicons name="images-outline" size={26} color="#fff" />
+          <Text style={s.galleryBtnText}>Library</Text>
+        </TouchableOpacity>
+
         {loading
           ? <ActivityIndicator size="large" color="#fff" />
           : (
@@ -176,6 +210,8 @@ export default function CameraScreen() {
             </TouchableOpacity>
           )
         }
+
+        <View style={{ width: 64 }} />
       </View>
     </View>
   );
@@ -212,7 +248,9 @@ const s = StyleSheet.create({
   hint: { color: '#fff', fontSize: 13, textAlign: 'center', paddingHorizontal: 32, opacity: 0.85 },
 
   // Capture button
-  captureRow: { height: 120, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
+  captureRow: { height: 120, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#000', paddingHorizontal: 24 },
+  galleryBtn: { width: 64, alignItems: 'center', gap: 4 },
+  galleryBtnText: { color: '#fff', fontSize: 11, opacity: 0.8 },
   captureBtn: { width: 72, height: 72, borderRadius: 36, borderWidth: 4, borderColor: '#fff', justifyContent: 'center', alignItems: 'center' },
   captureInner: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#fff' },
 
