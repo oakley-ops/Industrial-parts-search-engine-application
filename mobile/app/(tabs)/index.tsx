@@ -89,7 +89,26 @@ export default function SearchScreen() {
       {loading && <View style={s.center}><ActivityIndicator size="large" color="#1e40af" /><Text style={s.loadingText}>Searching all 3 vendors...</Text></View>}
 
       {!loading && searched && results.length === 0 && (
-        <View style={s.center}><Text style={{ fontSize: 48 }}>🔍</Text><Text style={s.emptyTitle}>No results found</Text></View>
+        <View style={s.center}>
+          <Text style={{ fontSize: 48 }}>🔍</Text>
+          <Text style={s.emptyTitle}>No results found</Text>
+          <Text style={s.emptySub}>Try shorter or broader search terms</Text>
+          {query.trim().split(' ').length > 2 && (
+            <TouchableOpacity
+              style={s.broaderBtn}
+              onPress={() => {
+                const shorter = query.trim().split(' ').slice(0, 2).join(' ');
+                setQuery(shorter);
+                triggerSearch(shorter);
+              }}
+            >
+              <Ionicons name="search-outline" size={16} color="#1e40af" />
+              <Text style={s.broaderBtnText}>
+                Try "{query.trim().split(' ').slice(0, 2).join(' ')}"
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
 
       {!loading && !searched && (
@@ -135,6 +154,9 @@ const s = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 12 },
   loadingText: { color: '#6b7280', fontSize: 14 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  emptySub: { fontSize: 14, color: '#6b7280', textAlign: 'center' },
+  broaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: '#eff6ff', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#bfdbfe' },
+  broaderBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 14 },
   heroTitle: { fontSize: 22, fontWeight: '800', color: '#111827', textAlign: 'center', marginBottom: 8 },
   heroSub: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 22 },
 });

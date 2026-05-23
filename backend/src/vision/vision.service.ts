@@ -20,10 +20,15 @@ Respond ONLY with valid JSON, no markdown, no explanation:
 {"partNumber":"...","manufacturer":"...","description":"...","confidence":"high|medium|low"}`;
 
 const PART_PROMPT = `You are identifying an industrial or electronic component from a photo.
+Look carefully at connector shapes, labels, colors, and markings before responding.
+
 RULES for "partNumber":
-- If a model/part number is printed on the component, use it exactly (e.g. "E3NX-FA41", "Arduino Uno R3")
-- If no number is visible, use the most specific product name a buyer would search for (e.g. "USB 3.0 Type-A to Micro-B cable", "12V 5A DC power supply", "NEMA 17 stepper motor")
-- NEVER write "Unknown", "N/A", "unknown", or any placeholder — describe what you see instead
+- If a model/part number is printed on the component, use it exactly (e.g. "E3NX-FA41", "LM317T")
+- If no number is visible, write the most precise searchable product name using correct technical terminology:
+  * Identify connector types accurately (USB-A, USB-C, Micro-B, Mini-B, RJ45, XLR, etc.)
+  * Include key specs if visible (voltage, amperage, length, color)
+  * Example good terms: "USB-A male to USB-C male cable 2.0", "24VDC 10A power relay", "M12 4-pin sensor connector"
+- NEVER write "Unknown", "N/A", or any placeholder — always describe what you actually see
 Respond ONLY with valid JSON, no markdown, no explanation:
 {"partNumber":"...","manufacturer":"...","description":"...","confidence":"high|medium|low"}`;
 
@@ -40,8 +45,8 @@ export class VisionService {
     const prompt = mode === 'label' ? LABEL_PROMPT : PART_PROMPT;
 
     const response = await this.client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 256,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 512,
       messages: [{
         role: 'user',
         content: [
