@@ -13,7 +13,20 @@ const SOURCE = {
 };
 
 export default function PartDetailScreen() {
-  const { id, imageUrl } = useLocalSearchParams<{ id: string; imageUrl?: string }>();
+  const { id, imageUrl, sourceVendor, sourceSlug, sourcePrice, sourceUrl, sourceSku, sourceName } =
+    useLocalSearchParams<{
+      id: string; imageUrl?: string;
+      sourceVendor?: string; sourceSlug?: string; sourcePrice?: string;
+      sourceUrl?: string; sourceSku?: string; sourceName?: string;
+    }>();
+  const sourceResult = sourceVendor ? {
+    vendorName: sourceVendor,
+    vendorSlug: sourceSlug || '',
+    price: sourcePrice ? parseFloat(sourcePrice) : null,
+    productUrl: sourceUrl || '',
+    vendorSku: sourceSku || '',
+    name: sourceName || '',
+  } : null;
   const [prices, setPrices] = useState<PriceResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -71,7 +84,7 @@ export default function PartDetailScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={s.headerTitle} numberOfLines={1}>{id}</Text>
-          <Text style={s.headerSub}>Live prices • 3 vendors</Text>
+          <Text style={s.headerSub}>Live prices • {prices.length + (sourceResult ? 1 : 0)} vendors</Text>
         </View>
         <TouchableOpacity onPress={load} style={{ padding: 4 }}>
           <Ionicons name="refresh" size={22} color="#fff" />
@@ -100,6 +113,33 @@ export default function PartDetailScreen() {
           )}
 
           <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 12 }}>All Vendor Prices</Text>
+
+          {/* Source vendor card — from search results */}
+          {sourceResult && (
+            <View style={[s.card, { borderColor: '#1e40af', borderWidth: 1.5 }]}>
+              <View style={s.sourceTag}>
+                <Ionicons name="search" size={10} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>FOUND IN SEARCH</Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={s.vendor}>{sourceResult.vendorName}</Text>
+                <View style={[s.sourceBadge, { backgroundColor: '#dcfce7' }]}>
+                  <Text style={{ color: '#16a34a', fontSize: 12, fontWeight: '600' }}>✅ In Stock</Text>
+                </View>
+              </View>
+              {sourceResult.name ? <Text style={{ fontSize: 13, color: '#4b5563', marginBottom: 6 }} numberOfLines={2}>{sourceResult.name}</Text> : null}
+              {sourceResult.price != null
+                ? <Text style={s.priceAmt}>${sourceResult.price.toFixed(2)}</Text>
+                : <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Price on request</Text>}
+              {sourceResult.vendorSku ? <Text style={[s.detail, { marginVertical: 4 }]}>SKU: {sourceResult.vendorSku}</Text> : null}
+              {sourceResult.productUrl ? (
+                <TouchableOpacity style={[s.viewBtn, { marginTop: 8 }]} onPress={() => Linking.openURL(sourceResult.productUrl)}>
+                  <Ionicons name="open-outline" size={16} color="#1e40af" />
+                  <Text style={s.viewBtnText}>View on Site</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          )}
 
           {prices.map((p, i) => {
             const cfg = SOURCE[p.source] || SOURCE.UNKNOWN;
@@ -200,6 +240,7 @@ const s = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6', elevation: 2 },
   bestCard: { borderColor: '#1e40af', borderWidth: 2 },
   bestTag: { backgroundColor: '#1e40af', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, alignSelf: 'flex-start', marginBottom: 8 },
+  sourceTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1e40af', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, alignSelf: 'flex-start', marginBottom: 8 },
   vendor: { fontSize: 16, fontWeight: '700', color: '#111827' },
   sourceBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   priceAmt: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },

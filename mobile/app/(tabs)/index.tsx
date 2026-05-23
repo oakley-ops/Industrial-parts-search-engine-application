@@ -32,7 +32,16 @@ export default function SearchScreen() {
   const renderItem = ({ item }: { item: SearchResult }) => (
     <TouchableOpacity style={s.card} onPress={() => router.push({
       pathname: '/part/[id]',
-      params: { id: item.vendorSku || item.partNumber, imageUrl: item.imageUrl || '' },
+      params: {
+        id: item.vendorSku || item.partNumber,
+        imageUrl: item.imageUrl || '',
+        sourceVendor: item.vendorName,
+        sourceSlug: item.vendorSlug,
+        sourcePrice: item.price != null ? item.price.toString() : '',
+        sourceUrl: item.productUrl || '',
+        sourceSku: item.vendorSku || '',
+        sourceName: item.name,
+      },
     })}>
       <View style={s.cardTop}>
         <View style={s.badge}><Text style={s.badgeText}>{item.vendorName}</Text></View>
