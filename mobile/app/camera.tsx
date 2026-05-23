@@ -93,9 +93,11 @@ export default function CameraScreen() {
 
   const reset = () => { setPreview(null); setResult(null); };
 
+  const searchQuery = result?.partNumber || result?.description || '';
+
   const search = () => {
-    if (!result?.partNumber) return;
-    router.replace({ pathname: '/(tabs)', params: { query: result.partNumber } });
+    if (!searchQuery) return;
+    router.replace({ pathname: '/(tabs)', params: { query: searchQuery } });
   };
 
   const confidenceColor = { high: '#16a34a', medium: '#d97706', low: '#dc2626' }[result?.confidence ?? 'low'];
@@ -134,10 +136,17 @@ export default function CameraScreen() {
               <Text style={s.manufacturer}>{result.manufacturer}</Text>
             ) : null}
 
-            <Text style={s.partNumber}>{result.partNumber || 'Part number not found'}</Text>
+            <Text style={s.partNumber}>{result.partNumber || result.description || 'Could not identify'}</Text>
 
-            {result.description ? (
+            {result.partNumber && result.description ? (
               <Text style={s.description} numberOfLines={3}>{result.description}</Text>
+            ) : null}
+
+            {searchQuery ? (
+              <View style={s.searchQueryRow}>
+                <Ionicons name="search-outline" size={13} color="#6b7280" />
+                <Text style={s.searchQueryText}>Will search: "{searchQuery}"</Text>
+              </View>
             ) : null}
 
             <View style={s.actionRow}>
@@ -147,9 +156,9 @@ export default function CameraScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[s.searchBtn, !result.partNumber && { opacity: 0.4 }]}
+                style={[s.searchBtn, !searchQuery && { opacity: 0.4 }]}
                 onPress={search}
-                disabled={!result.partNumber}
+                disabled={!searchQuery}
               >
                 <Ionicons name="search" size={18} color="#fff" />
                 <Text style={s.searchBtnText}>Search This Part</Text>
@@ -275,6 +284,8 @@ const s = StyleSheet.create({
   manufacturer: { fontSize: 14, color: '#6b7280', fontWeight: '500' },
   partNumber: { fontSize: 28, fontWeight: '800', color: '#111827' },
   description: { fontSize: 14, color: '#4b5563', lineHeight: 20 },
+  searchQueryRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f3f4f6', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
+  searchQueryText: { fontSize: 12, color: '#6b7280', flex: 1 },
   actionRow: { flexDirection: 'row', gap: 10, marginTop: 'auto', paddingTop: 16 },
   retakeBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: '#1e40af', borderRadius: 10, padding: 14, flex: 1 },
   retakeBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 15 },
