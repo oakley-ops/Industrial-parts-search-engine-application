@@ -6,9 +6,19 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { identifyPart } from '../services/api';
+
+const resizeAndEncode = async (uri: string): Promise<string> => {
+  const resized = await ImageManipulator.manipulateAsync(
+    uri,
+    [{ resize: { width: 1024 } }],
+    { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+  );
+  return resized.base64!;
+};
 
 type Mode = 'label' | 'part';
 
@@ -41,9 +51,10 @@ export default function CameraScreen() {
     if (!cameraRef.current) return;
     setLoading(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.6 });
+      const photo = await cameraRef.current.takePictureAsync({ base64: false, quality: 1 });
       setPreview(photo.uri);
-      const res = await identifyPart(photo.base64!, mode);
+      const base64 = await resizeAndEncode(photo.uri);
+      const res = await identifyPart(base64, mode);
       setResult(res);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not process image');
@@ -68,8 +79,8 @@ export default function CameraScreen() {
     const asset = picked.assets[0];
     setLoading(true);
     try {
-      const base64 = asset.base64 ?? await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 });
       setPreview(asset.uri);
+      const base64 = await resizeAndEncode(asset.uri);
       const res = await identifyPart(base64, mode);
       setResult(res);
     } catch (err: any) {
