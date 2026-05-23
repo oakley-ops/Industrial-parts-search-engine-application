@@ -101,6 +101,8 @@ export default function CameraScreen() {
   };
 
   const confidenceColor = { high: '#16a34a', medium: '#d97706', low: '#dc2626' }[result?.confidence ?? 'low'];
+  const isExactMatch = result?.confidence === 'high';
+  const matchLabel = isExactMatch ? 'Exact Match' : result?.confidence === 'medium' ? 'Close Match' : 'Showing Similar Parts';
 
   // Preview + result screen
   if (preview) {
@@ -110,7 +112,7 @@ export default function CameraScreen() {
           <TouchableOpacity onPress={reset} style={{ padding: 4 }}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>Part Identified</Text>
+          <Text style={s.headerTitle}>{result ? matchLabel : 'Part Identified'}</Text>
           <View style={{ width: 32 }} />
         </View>
 
@@ -125,11 +127,19 @@ export default function CameraScreen() {
 
         {!loading && result && (
           <View style={s.resultBox}>
-            <View style={s.confidenceRow}>
-              <Ionicons name="checkmark-circle" size={16} color={confidenceColor} />
-              <Text style={[s.confidenceText, { color: confidenceColor }]}>
-                {result.confidence.charAt(0).toUpperCase() + result.confidence.slice(1)} confidence
+            {/* Match type banner */}
+            <View style={[s.matchBanner, { backgroundColor: isExactMatch ? '#dcfce7' : result.confidence === 'medium' ? '#fef3c7' : '#eff6ff' }]}>
+              <Ionicons
+                name={isExactMatch ? 'checkmark-circle' : result.confidence === 'medium' ? 'git-compare-outline' : 'albums-outline'}
+                size={15}
+                color={isExactMatch ? '#16a34a' : result.confidence === 'medium' ? '#d97706' : '#1e40af'}
+              />
+              <Text style={[s.matchBannerText, { color: isExactMatch ? '#16a34a' : result.confidence === 'medium' ? '#d97706' : '#1e40af' }]}>
+                {matchLabel}
               </Text>
+              {!isExactMatch && (
+                <Text style={s.matchBannerSub}> — results may vary</Text>
+              )}
             </View>
 
             {result.manufacturer ? (
@@ -142,10 +152,10 @@ export default function CameraScreen() {
               <Text style={s.description} numberOfLines={3}>{result.description}</Text>
             ) : null}
 
-            {searchQuery ? (
-              <View style={s.searchQueryRow}>
-                <Ionicons name="search-outline" size={13} color="#6b7280" />
-                <Text style={s.searchQueryText}>Will search: "{searchQuery}"</Text>
+            {!isExactMatch && searchQuery ? (
+              <View style={s.similarNote}>
+                <Ionicons name="information-circle-outline" size={14} color="#6b7280" />
+                <Text style={s.similarNoteText}>No part number found — searching for similar items</Text>
               </View>
             ) : null}
 
@@ -161,7 +171,7 @@ export default function CameraScreen() {
                 disabled={!searchQuery}
               >
                 <Ionicons name="search" size={18} color="#fff" />
-                <Text style={s.searchBtnText}>Search This Part</Text>
+                <Text style={s.searchBtnText}>{isExactMatch ? 'Search This Part' : 'Find Similar Parts'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -281,6 +291,13 @@ const s = StyleSheet.create({
   resultBox: { flex: 1, backgroundColor: '#fff', padding: 20, gap: 8 },
   confidenceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   confidenceText: { fontSize: 13, fontWeight: '600' },
+  matchBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 4 },
+  matchBannerText: { fontSize: 13, fontWeight: '700' },
+  matchBannerSub: { fontSize: 12, color: '#9ca3af' },
+  similarNote: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#f9fafb', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 7 },
+  similarNoteText: { fontSize: 12, color: '#6b7280', flex: 1 },
+  searchQueryRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f3f4f6', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
+  searchQueryText: { fontSize: 12, color: '#6b7280', flex: 1 },
   manufacturer: { fontSize: 14, color: '#6b7280', fontWeight: '500' },
   partNumber: { fontSize: 28, fontWeight: '800', color: '#111827' },
   description: { fontSize: 14, color: '#4b5563', lineHeight: 20 },
