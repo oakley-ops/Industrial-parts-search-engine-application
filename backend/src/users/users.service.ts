@@ -19,4 +19,8 @@ export class UsersService {
   validatePassword(user: User, password: string) {
     return bcrypt.compare(password, user.passwordHash);
   }
+
+  async updatePushToken(userId: string, token: string | null): Promise<void> {
+    await this.repo.update(userId, { expoPushToken: token });
+  }
 }
