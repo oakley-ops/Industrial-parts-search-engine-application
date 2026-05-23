@@ -12,6 +12,10 @@ export class AlertsService {
     return this.repo.find({ where: { userId }, order: { createdAt: 'DESC' } });
   }
 
+  findAllActive(): Promise<Alert[]> {
+    return this.repo.find({ where: { isActive: true } });
+  }
+
   create(data: CreateAlertDto, userId: string) {
     return this.repo.save(this.repo.create({ ...data, userId }));
   }
@@ -28,5 +32,13 @@ export class AlertsService {
     if (!alert) throw new NotFoundException();
     await this.repo.delete(id);
     return { deleted: true };
+  }
+
+  async disableAndStampAlert(id: string): Promise<void> {
+    const alert = await this.repo.findOne({ where: { id } });
+    if (!alert) throw new NotFoundException();
+    alert.isActive = false;
+    alert.lastTriggered = new Date();
+    await this.repo.save(alert);
   }
 }
