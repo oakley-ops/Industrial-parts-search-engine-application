@@ -23,7 +23,27 @@ interface DkProduct {
   ProductVariations: DkVariation[];
 }
 
-interface DkResponse {
+// Keyword search returns a flatter structure
+interface DkKeywordProduct {
+  ManufacturerProductNumber: string;
+  DigiKeyPartNumber: string;
+  Manufacturer: { Name: string };
+  Description: { ProductDescription: string };
+  QuantityAvailable: number;
+  UnitPrice: number;
+  ProductUrl: string;
+  ManufacturerLeadWeeks: string;
+  MinimumOrderQuantity: number;
+  PrimaryPhoto: string;
+}
+
+interface DkKeywordResponse {
+  Products: DkKeywordProduct[];
+  ProductsCount: number;
+  FilteredProductsCount: number;
+}
+
+interface DkPricingResponse {
   ProductPricings: DkProduct[];
   ProductsCount: number;
 }
@@ -71,26 +91,25 @@ export class DigiKeyService {
     if (!this.clientId || !this.clientSecret) return [];
     try {
       const token = await this.getToken();
-      const { data } = await axios.get<DkResponse>(
-        `${this.apiBase}/${encodeURIComponent(query)}/pricing`,
-        { headers: this.authHeaders(token), params: { limit: 10 }, timeout: 10000 },
+      const { data } = await axios.post<DkKeywordResponse>(
+        `${this.apiBase}/keyword`,
+        { Keywords: query, RecordCount: 10, RecordStartPosition: 0 },
+        { headers: { ...this.authHeaders(token), 'Content-Type': 'application/json' }, timeout: 10000 },
       );
-      if (!data?.ProductPricings) return [];
+      if (!data?.Products) return [];
 
-      return data.ProductPricings.map(p => {
-        const variation = p.ProductVariations?.[0];
-        return {
-          vendorSlug: 'digikey',
-          vendorName: 'DigiKey',
-          partNumber: query,
-          vendorSku: variation?.DigiKeyProductNumber ?? p.ManufacturerProductNumber,
-          name: `${p.Manufacturer.Name} ${p.ManufacturerProductNumber}`.trim(),
-          description: p.Description.ProductDescription,
-          price: variation ? this.qty1Price(variation) : null,
-          inStock: p.QuantityAvailable > 0,
-          productUrl: p.ProductUrl,
-        };
-      });
+      return data.Products.map(p => ({
+        vendorSlug: 'digikey',
+        vendorName: 'DigiKey',
+        partNumber: query,
+        vendorSku: p.DigiKeyPartNumber,
+        name: `${p.Manufacturer.Name} ${p.ManufacturerProductNumber}`.trim(),
+        description: p.Description.ProductDescription,
+        price: p.UnitPrice ?? null,
+        inStock: p.QuantityAvailable > 0,
+        productUrl: p.ProductUrl,
+        imageUrl: p.PrimaryPhoto || undefined,
+      }));
     } catch (err) {
       this.logger.error(`DigiKey search failed: ${err.message}`);
       return [];
@@ -101,7 +120,7 @@ export class DigiKeyService {
     if (!this.clientId || !this.clientSecret) return [];
     try {
       const token = await this.getToken();
-      const { data } = await axios.get<DkResponse>(
+      const { data } = await axios.get<DkPricingResponse>(
         `${this.apiBase}/${encodeURIComponent(partNumber)}/pricing`,
         { headers: this.authHeaders(token), params: { limit: 5 }, timeout: 10000 },
       );
