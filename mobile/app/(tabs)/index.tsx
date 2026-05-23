@@ -1,23 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Image } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { searchParts } from '../../services/api';
 import { SearchResult } from '../../types';
 
 export default function SearchScreen() {
+  const params = useLocalSearchParams<{ query?: string }>();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  const doSearch = async () => {
-    if (!query.trim()) return;
+  useEffect(() => {
+    if (params.query) {
+      setQuery(params.query);
+      triggerSearch(params.query);
+    }
+  }, [params.query]);
+
+  const triggerSearch = async (q: string) => {
+    if (!q.trim()) return;
     setLoading(true); setSearched(true);
-    try { setResults(await searchParts(query.trim())); }
+    try { setResults(await searchParts(q.trim())); }
     catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
+
+  const doSearch = async () => triggerSearch(query);
 
   const renderItem = ({ item }: { item: SearchResult }) => (
     <TouchableOpacity style={s.card} onPress={() => router.push({
@@ -65,6 +75,9 @@ export default function SearchScreen() {
         <TouchableOpacity style={s.searchBtn} onPress={doSearch} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.searchBtnText}>Search</Text>}
         </TouchableOpacity>
+        <TouchableOpacity style={s.cameraBtn} onPress={() => router.push('/camera')}>
+          <Ionicons name="camera" size={22} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       <View style={s.chips}>
@@ -102,6 +115,7 @@ const s = StyleSheet.create({
   searchInput: { flex: 1, height: 44, fontSize: 15 },
   searchBtn: { backgroundColor: '#f59e0b', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
   searchBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  cameraBtn: { backgroundColor: '#1e3a8a', borderRadius: 10, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   chips: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, gap: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
   chip: { paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#eff6ff', borderRadius: 20, borderWidth: 1, borderColor: '#bfdbfe' },
   chipText: { color: '#1e40af', fontSize: 12, fontWeight: '600' },

@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { VendorsModule } from './vendors/vendors.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { AlertsModule } from './alerts/alerts.module';
+import { VisionModule } from './vision/vision.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AlertsModule } from './alerts/alerts.module';
     VendorsModule,
     QuotesModule,
     AlertsModule,
+    VisionModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

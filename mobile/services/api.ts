@@ -50,6 +50,12 @@ export const removeLineItem = async (quoteId: string, itemId: string) => {
 };
 export const deleteQuote = async (id: string) => { const { data } = await api.delete(`/quotes/${id}`); return data; };
 
+// Vision
+export const identifyPart = async (base64Image: string, mode: 'label' | 'part') => {
+  const { data } = await api.post('/vision/identify', { image: base64Image, mode });
+  return data as { partNumber: string; manufacturer: string; description: string; confidence: string };
+};
+
 // Alerts
 export const getAlerts = async () => { const { data } = await api.get('/alerts'); return data; };
 export const createAlert = async (alert: { partNumber: string; vendorSlug?: string; alertType: string; thresholdValue?: number }) => {
