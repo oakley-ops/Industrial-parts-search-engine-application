@@ -28,7 +28,7 @@ interface DkKeywordProduct {
   ManufacturerProductNumber: string;
   DigiKeyPartNumber: string;
   Manufacturer: { Name: string };
-  Description: { ProductDescription: string };
+  Description: { ProductDescription: string; DetailedDescription: string };
   QuantityAvailable: number;
   UnitPrice: number;
   ProductUrl: string;
@@ -104,7 +104,8 @@ export class DigiKeyService {
         partNumber: query,
         vendorSku: p.DigiKeyPartNumber,
         name: `${p.Manufacturer.Name} ${p.ManufacturerProductNumber}`.trim(),
-        description: p.Description.ProductDescription,
+        description: [p.Description.DetailedDescription, p.Description.ProductDescription]
+          .filter(Boolean).join(' — '),
         price: p.UnitPrice ?? null,
         inStock: p.QuantityAvailable > 0,
         productUrl: p.ProductUrl,

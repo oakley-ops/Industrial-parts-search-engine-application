@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal, Image } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal, Image, Linking } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getPricesForPart, getQuotes, createQuote, addLineItem } from '../../services/api';
@@ -124,10 +124,18 @@ export default function PartDetailScreen() {
                 <Text style={{ fontSize: 11, color: '#d1d5db', marginBottom: 10 }}>
                   Updated: {new Date(p.scrapedAt).toLocaleTimeString()}
                 </Text>
-                <TouchableOpacity style={[s.addBtn, !p.price && s.addBtnOff]} onPress={() => p.price && openModal(p)} disabled={!p.price}>
-                  <Ionicons name="add-circle-outline" size={18} color={p.price ? '#fff' : '#9ca3af'} />
-                  <Text style={[s.addBtnText, !p.price && { color: '#9ca3af' }]}>Add to Quote</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {p.productUrl ? (
+                    <TouchableOpacity style={s.viewBtn} onPress={() => Linking.openURL(p.productUrl)}>
+                      <Ionicons name="open-outline" size={16} color="#1e40af" />
+                      <Text style={s.viewBtnText}>View on Site</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                  <TouchableOpacity style={[s.addBtn, { flex: 1 }, !p.price && s.addBtnOff]} onPress={() => p.price && openModal(p)} disabled={!p.price}>
+                    <Ionicons name="add-circle-outline" size={18} color={p.price ? '#fff' : '#9ca3af'} />
+                    <Text style={[s.addBtnText, !p.price && { color: '#9ca3af' }]}>Add to Quote</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             );
           })}
@@ -199,6 +207,8 @@ const s = StyleSheet.create({
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1e40af', borderRadius: 8, padding: 12, gap: 6 },
   addBtnOff: { backgroundColor: '#f3f4f6' },
   addBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  viewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#1e40af', borderRadius: 8, padding: 12, gap: 6, paddingHorizontal: 14 },
+  viewBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 14 },
   modal: { flex: 1, padding: 24, backgroundColor: '#fff' },
   modalTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
   selectedBanner: { backgroundColor: '#eff6ff', borderRadius: 10, padding: 12, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between' },
