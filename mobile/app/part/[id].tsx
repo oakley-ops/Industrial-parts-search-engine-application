@@ -84,8 +84,6 @@ export default function PartDetailScreen() {
     pathname: '/crossref',
     params: {
       partNumber: id,
-      manufacturer: prices[0]?.vendorName || '',
-      description: '',
     },
   });
 
