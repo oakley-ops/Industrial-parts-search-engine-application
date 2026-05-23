@@ -76,6 +76,19 @@ export default function PartDetailScreen() {
 
   const best = prices.filter(p => p.price !== null).sort((a, b) => (a.price || 0) - (b.price || 0))[0];
 
+  const noStock = !loading && prices.length > 0 && prices.every(
+    p => p.price === null || p.source === 'BACKORDER' || !!p.error,
+  );
+
+  const goToCrossref = () => router.push({
+    pathname: '/crossref',
+    params: {
+      partNumber: id,
+      manufacturer: prices[0]?.vendorName || '',
+      description: '',
+    },
+  });
+
   return (
     <View style={s.container}>
       <View style={s.header}>
@@ -86,6 +99,9 @@ export default function PartDetailScreen() {
           <Text style={s.headerTitle} numberOfLines={1}>{id}</Text>
           <Text style={s.headerSub}>Live prices • {prices.length + (sourceResult ? 1 : 0)} vendors</Text>
         </View>
+        <TouchableOpacity onPress={goToCrossref} style={{ padding: 4 }}>
+          <Ionicons name="swap-horizontal-outline" size={22} color="#fff" />
+        </TouchableOpacity>
         <TouchableOpacity onPress={load} style={{ padding: 4 }}>
           <Ionicons name="refresh" size={22} color="#fff" />
         </TouchableOpacity>
@@ -186,6 +202,21 @@ export default function PartDetailScreen() {
               <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>No results from any vendor</Text>
             </View>
           )}
+          {noStock && (
+            <View style={s.noStockBanner}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <Text style={{ fontSize: 18 }}>⚠️</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '700', color: '#92400e', fontSize: 15 }}>No stock found at any vendor</Text>
+                  <Text style={{ color: '#92400e', fontSize: 13, marginTop: 2 }}>Find a compatible replacement part?</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={s.crossrefBtn} onPress={goToCrossref}>
+                <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
+                <Text style={s.crossrefBtnText}>Find Equivalent Parts</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
       )}
 
@@ -258,4 +289,13 @@ const s = StyleSheet.create({
   quoteRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, marginBottom: 8 },
   input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 14, fontSize: 15, marginBottom: 12 },
   createBtn: { backgroundColor: '#1e40af', borderRadius: 10, padding: 16, alignItems: 'center' },
+  noStockBanner: {
+    backgroundColor: '#fef3c7', borderRadius: 12, padding: 16,
+    marginBottom: 12, borderWidth: 1, borderColor: '#fcd34d',
+  },
+  crossrefBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, backgroundColor: '#d97706', borderRadius: 8, padding: 12,
+  },
+  crossrefBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });
