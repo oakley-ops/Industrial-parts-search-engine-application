@@ -1,4 +1,5 @@
 import { chromium, Browser, Page } from 'playwright';
+import { OnApplicationShutdown } from '@nestjs/common';
 
 export interface PriceResult {
   vendorSlug: string;
@@ -29,9 +30,11 @@ export interface SearchResult {
   productUrl: string;
 }
 
-export abstract class BaseScraper {
+export abstract class BaseScraper implements OnApplicationShutdown {
   abstract readonly vendorSlug: string;
   abstract readonly vendorName: string;
+
+  private _browser: Browser | null = null;
 
   protected userAgents = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/121.0.0.0 Safari/537.36',
@@ -49,20 +52,28 @@ export abstract class BaseScraper {
     return new Promise(r => setTimeout(r, ms));
   }
 
-  protected async createBrowser(): Promise<Browser> {
-    return chromium.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-    });
-  }
-
-  protected async createPage(browser: Browser): Promise<Page> {
-    const ctx = await browser.newContext({
+  protected async getPage(): Promise<Page> {
+    if (!this._browser || !this._browser.isConnected()) {
+      this._browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+      });
+    }
+    const context = await this._browser.newContext({
       userAgent: this.randomAgent(),
       viewport: { width: 1280, height: 800 },
       extraHTTPHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
     });
-    return ctx.newPage();
+    return context.newPage();
+  }
+
+  protected async closePage(page: Page): Promise<void> {
+    await page.context().close();
+  }
+
+  async onApplicationShutdown(): Promise<void> {
+    await this._browser?.close();
+    this._browser = null;
   }
 
   protected extractPrice(text: string): number | null {

@@ -9,10 +9,9 @@ export class MotionScraper extends BaseScraper {
   private readonly base = 'https://www.motion.com';
 
   async search(query: string): Promise<SearchResult[]> {
-    const browser = await this.createBrowser();
+    const page = await this.getPage();
     const results: SearchResult[] = [];
     try {
-      const page = await this.createPage(browser);
       await page.goto(`${this.base}/en/search?term=${encodeURIComponent(query)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await this.delay();
       await page.waitForSelector('[class*="ProductCard"], [class*="product-card"], .product-item', { timeout: 10000 }).catch(() => {});
@@ -42,13 +41,13 @@ export class MotionScraper extends BaseScraper {
     } catch (err) {
       this.logger.error(`Motion search error: ${err.message}`);
     } finally {
-      await browser.close();
+      await this.closePage(page);
     }
     return results;
   }
 
   async getPrice(partNumber: string): Promise<PriceResult> {
-    const browser = await this.createBrowser();
+    const page = await this.getPage();
     const fallback: PriceResult = {
       vendorSlug: this.vendorSlug, vendorName: this.vendorName, vendorSku: partNumber,
       price: null, currency: 'USD', quantityOnHand: 0, source: 'UNKNOWN',
@@ -56,7 +55,6 @@ export class MotionScraper extends BaseScraper {
       productUrl: '', inStock: false, scrapedAt: new Date().toISOString(),
     };
     try {
-      const page = await this.createPage(browser);
       await page.goto(`${this.base}/en/search?term=${encodeURIComponent(partNumber)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await this.delay();
       const link = await page.$('[class*="ProductCard"] a, [class*="product-card"] a');
@@ -84,7 +82,7 @@ export class MotionScraper extends BaseScraper {
       this.logger.error(`Motion getPrice error: ${err.message}`);
       return { ...fallback, error: err.message };
     } finally {
-      await browser.close();
+      await this.closePage(page);
     }
   }
 }

@@ -9,10 +9,9 @@ export class McMasterScraper extends BaseScraper {
   private readonly base = 'https://www.mcmaster.com';
 
   async search(query: string): Promise<SearchResult[]> {
-    const browser = await this.createBrowser();
+    const page = await this.getPage();
     const results: SearchResult[] = [];
     try {
-      const page = await this.createPage(browser);
       await page.goto(`${this.base}/${encodeURIComponent(query)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await this.delay();
       await page.waitForSelector('[class*="ResultItem"], [class*="result-row"]', { timeout: 10000 }).catch(() => {});
@@ -39,13 +38,13 @@ export class McMasterScraper extends BaseScraper {
     } catch (err) {
       this.logger.error(`McMaster search error: ${err.message}`);
     } finally {
-      await browser.close();
+      await this.closePage(page);
     }
     return results;
   }
 
   async getPrice(partNumber: string): Promise<PriceResult> {
-    const browser = await this.createBrowser();
+    const page = await this.getPage();
     const fallback: PriceResult = {
       vendorSlug: this.vendorSlug, vendorName: this.vendorName, vendorSku: partNumber,
       price: null, currency: 'USD', quantityOnHand: 0, source: 'UNKNOWN',
@@ -53,7 +52,6 @@ export class McMasterScraper extends BaseScraper {
       productUrl: `${this.base}/${partNumber}/`, inStock: false, scrapedAt: new Date().toISOString(),
     };
     try {
-      const page = await this.createPage(browser);
       await page.goto(`${this.base}/${partNumber}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await this.delay();
       const hasPrice = await page.$('[class*="Price"], [itemprop="price"]');
@@ -91,7 +89,7 @@ export class McMasterScraper extends BaseScraper {
       this.logger.error(`McMaster getPrice error: ${err.message}`);
       return { ...fallback, error: err.message };
     } finally {
-      await browser.close();
+      await this.closePage(page);
     }
   }
 }
