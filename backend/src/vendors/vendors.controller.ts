@@ -1,5 +1,6 @@
-import { Controller, Get, Delete, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { VendorsService } from './vendors.service';
 
@@ -10,10 +11,20 @@ import { VendorsService } from './vendors.service';
 export class VendorsController {
   constructor(private svc: VendorsService) {}
 
-  @Get() getVendors() { return this.svc.getVendors(); }
-  @Get('search') search(@Query('q') q: string) { return q ? this.svc.searchAll(q) : []; }
-  @Get('prices/:partNumber') getPrices(@Param('partNumber') p: string) { return this.svc.getPricesForPart(p); }
-  @Get('prices/:vendorSlug/:partNumber') getVendorPrice(@Param('vendorSlug') v: string, @Param('partNumber') p: string) { return this.svc.getPriceFromVendor(v, p); }
-  @Delete('cache/:partNumber') clearCache(@Param('partNumber') p: string) { return this.svc.clearCache(p); }
-  @Delete('cache') clearAllCache() { return this.svc.clearCache(); }
+  @Get()
+  getVendors() { return this.svc.getVendors(); }
+
+  // Scraper endpoints: tighter limit — these are slow (5–15s) and resource-heavy
+  @Throttle({ default: { ttl: 30000, limit: 5 } })
+  @Get('search')
+  search(@Query('q') q: string) { return q ? this.svc.searchAll(q) : []; }
+
+  @Throttle({ default: { ttl: 30000, limit: 5 } })
+  @Get('prices/:partNumber')
+  getPrices(@Param('partNumber') p: string) { return this.svc.getPricesForPart(p); }
+
+  @Get('prices/:vendorSlug/:partNumber')
+  getVendorPrice(@Param('vendorSlug') v: string, @Param('partNumber') p: string) {
+    return this.svc.getPriceFromVendor(v, p);
+  }
 }
