@@ -1,0 +1,133 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
+import { SearchResult, PriceResult } from './base.scraper';
+
+interface DkToken { access_token: string; expires_at: number; }
+
+interface DkVariation {
+  DigiKeyProductNumber: string;
+  QuantityAvailableforPackageType: number;
+  MinimumOrderQuantity: number;
+  PackageType: { Id: number; Name: string };
+  StandardPricing: { BreakQuantity: number; UnitPrice: number }[];
+}
+
+interface DkProduct {
+  ManufacturerProductNumber: string;
+  Manufacturer: { Id: number; Name: string };
+  Description: { ProductDescription: string };
+  QuantityAvailable: number;
+  ProductUrl: string;
+  ManufacturerLeadWeeks: string;
+  ProductVariations: DkVariation[];
+}
+
+interface DkResponse {
+  ProductPricings: DkProduct[];
+  ProductsCount: number;
+}
+
+@Injectable()
+export class DigiKeyService {
+  private readonly logger = new Logger(DigiKeyService.name);
+  private readonly tokenUrl = 'https://api.digikey.com/v1/oauth2/token';
+  private readonly apiBase = 'https://api.digikey.com/products/v4/search';
+  private token: DkToken | null = null;
+
+  constructor(private config: ConfigService) {}
+
+  private get clientId(): string { return this.config.get<string>('DIGIKEY_CLIENT_ID', ''); }
+  private get clientSecret(): string { return this.config.get<string>('DIGIKEY_CLIENT_SECRET', ''); }
+
+  private async getToken(): Promise<string> {
+    if (this.token && Date.now() < this.token.expires_at) return this.token.access_token;
+    const { data } = await axios.post(this.tokenUrl,
+      `grant_type=client_credentials&client_id=${this.clientId}&client_secret=${this.clientSecret}`,
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+    );
+    this.token = { access_token: data.access_token, expires_at: Date.now() + (data.expires_in - 60) * 1000 };
+    return this.token.access_token;
+  }
+
+  private authHeaders(token: string) {
+    return {
+      Authorization: `Bearer ${token}`,
+      'X-DIGIKEY-Client-Id': this.clientId,
+      'X-DIGIKEY-Locale-Site': 'US',
+      'X-DIGIKEY-Locale-Language': 'en',
+      'X-DIGIKEY-Locale-Currency': 'USD',
+    };
+  }
+
+  private qty1Price(variation: DkVariation): number | null {
+    const pricing = variation.StandardPricing;
+    if (!pricing?.length) return null;
+    const qty1 = pricing.find(p => p.BreakQuantity === 1) ?? pricing[0];
+    return qty1.UnitPrice ?? null;
+  }
+
+  async search(query: string): Promise<SearchResult[]> {
+    if (!this.clientId || !this.clientSecret) return [];
+    try {
+      const token = await this.getToken();
+      const { data } = await axios.get<DkResponse>(
+        `${this.apiBase}/${encodeURIComponent(query)}/pricing`,
+        { headers: this.authHeaders(token), params: { limit: 10 }, timeout: 10000 },
+      );
+      if (!data?.ProductPricings) return [];
+
+      return data.ProductPricings.map(p => {
+        const variation = p.ProductVariations?.[0];
+        return {
+          vendorSlug: 'digikey',
+          vendorName: 'DigiKey',
+          partNumber: query,
+          vendorSku: variation?.DigiKeyProductNumber ?? p.ManufacturerProductNumber,
+          name: `${p.Manufacturer.Name} ${p.ManufacturerProductNumber}`.trim(),
+          description: p.Description.ProductDescription,
+          price: variation ? this.qty1Price(variation) : null,
+          inStock: p.QuantityAvailable > 0,
+          productUrl: p.ProductUrl,
+        };
+      });
+    } catch (err) {
+      this.logger.error(`DigiKey search failed: ${err.message}`);
+      return [];
+    }
+  }
+
+  async getPrices(partNumber: string): Promise<PriceResult[]> {
+    if (!this.clientId || !this.clientSecret) return [];
+    try {
+      const token = await this.getToken();
+      const { data } = await axios.get<DkResponse>(
+        `${this.apiBase}/${encodeURIComponent(partNumber)}/pricing`,
+        { headers: this.authHeaders(token), params: { limit: 5 }, timeout: 10000 },
+      );
+      if (!data?.ProductPricings) return [];
+
+      return data.ProductPricings.flatMap(p =>
+        (p.ProductVariations ?? []).map(variation => ({
+          vendorSlug: 'digikey',
+          vendorName: 'DigiKey',
+          vendorSku: variation.DigiKeyProductNumber,
+          price: this.qty1Price(variation),
+          currency: 'USD',
+          quantityOnHand: variation.QuantityAvailableforPackageType ?? p.QuantityAvailable ?? 0,
+          source: (variation.QuantityAvailableforPackageType > 0 || p.QuantityAvailable > 0)
+            ? 'VENDOR_WAREHOUSE' as const : 'UNKNOWN' as const,
+          leadTimeDays: p.ManufacturerLeadWeeks ? parseInt(p.ManufacturerLeadWeeks) * 7 : null,
+          minOrderQty: variation.MinimumOrderQuantity || 1,
+          unitOfMeasure: variation.PackageType?.Name || 'each',
+          productUrl: p.ProductUrl,
+          inStock: p.QuantityAvailable > 0,
+          scrapedAt: new Date().toISOString(),
+        }))
+      );
+    } catch (err) {
+      this.logger.error(`DigiKey prices failed: ${err.message}`);
+      return [];
+    }
+  }
+}

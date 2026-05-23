@@ -5,6 +5,7 @@ import { GraingerScraper } from './scrapers/grainger.scraper';
 import { MotionScraper } from './scrapers/motion.scraper';
 import { McMasterScraper } from './scrapers/mcmaster.scraper';
 import { OemSecretsService } from './scrapers/oemsecrets.service';
+import { DigiKeyService } from './scrapers/digikey.service';
 import { PriceResult, SearchResult } from './scrapers/base.scraper';
 import { DEMO_SEARCH_RESULTS, DEMO_PRICE_RESULTS } from './demo-data';
 
@@ -19,6 +20,7 @@ export class VendorsService {
     private motion: MotionScraper,
     private mcmaster: McMasterScraper,
     private oemSecrets: OemSecretsService,
+    private digikey: DigiKeyService,
   ) {}
 
   private get scrapers() { return [this.grainger, this.motion, this.mcmaster]; }
@@ -40,11 +42,12 @@ export class VendorsService {
     if (cached) return JSON.parse(cached);
 
     this.logger.log(`Searching all vendors: ${query}`);
-    const [settled, oemResults] = await Promise.all([
+    const [settled, oemResults, dkResults] = await Promise.all([
       Promise.allSettled(this.scrapers.map(s => s.search(query))),
       this.oemSecrets.search(query),
+      this.digikey.search(query),
     ]);
-    const results: SearchResult[] = [...oemResults];
+    const results: SearchResult[] = [...oemResults, ...dkResults];
     settled.forEach((r, i) => {
       if (r.status === 'rejected') this.logger.error(`${this.scrapers[i].vendorSlug} search failed: ${r.reason}`);
       else results.push(...r.value);
@@ -62,16 +65,17 @@ export class VendorsService {
     }
 
     this.logger.log(`Getting prices: ${partNumber}`);
-    const [settled, oemPrices] = await Promise.all([
+    const [settled, oemPrices, dkPrices] = await Promise.all([
       Promise.allSettled(
         this.scrapers.map(s => this.cachedPrice(s.vendorSlug, partNumber, () => s.getPrice(partNumber)))
       ),
       this.oemSecrets.getPrices(partNumber),
+      this.digikey.getPrices(partNumber),
     ]);
     const scraperPrices = settled
       .filter(r => r.status === 'fulfilled')
       .map(r => (r as PromiseFulfilledResult<PriceResult>).value);
-    return [...oemPrices, ...scraperPrices];
+    return [...oemPrices, ...dkPrices, ...scraperPrices];
   }
 
   async getPriceFromVendor(vendorSlug: string, partNumber: string): Promise<PriceResult | null> {
