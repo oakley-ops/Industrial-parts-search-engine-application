@@ -1,15 +1,8 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
-
-export class LoginDto {
-  @IsEmail() email: string;
-  @IsString() @MinLength(6) password: string;
-}
-export class RegisterDto extends LoginDto {
-  @IsOptional() @IsString() name?: string;
-}
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @ApiTags('auth')
 @Controller('auth')
