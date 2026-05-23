@@ -120,8 +120,11 @@ export default function CameraScreen() {
 
         {loading && (
           <View style={s.analyzingBox}>
-            <ActivityIndicator color="#1e40af" />
-            <Text style={s.analyzingText}>Analyzing with AI...</Text>
+            <View style={s.analyzingSpinnerWrap}>
+              <ActivityIndicator size="large" color="#1e40af" />
+            </View>
+            <Text style={s.analyzingTitle}>Analyzing with AI...</Text>
+            <Text style={s.analyzingSub}>Identifying part, manufacturer, and model number</Text>
           </View>
         )}
 
@@ -286,8 +289,10 @@ const s = StyleSheet.create({
 
   // Preview / result
   previewImage: { width: '100%', height: 260 },
-  analyzingBox: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 20, backgroundColor: '#fff' },
-  analyzingText: { fontSize: 16, color: '#374151', fontWeight: '600' },
+  analyzingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb', gap: 14, paddingHorizontal: 32 },
+  analyzingSpinnerWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#eff6ff', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  analyzingTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  analyzingSub: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 20 },
   resultBox: { flex: 1, backgroundColor: '#fff', padding: 20, gap: 8 },
   confidenceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   confidenceText: { fontSize: 13, fontWeight: '600' },
