@@ -12,16 +12,18 @@ export interface VisionResult {
 const LABEL_PROMPT = `You are reading an industrial equipment label or data tag.
 Extract the model/part number and manufacturer name.
 Ignore serial numbers, voltage ratings, and other non-part-number text.
-IMPORTANT: If no specific part number is visible, set "partNumber" to the most searchable product name or description (e.g. "USB-C to USB-A adapter", "24V DC relay", "Allen-Bradley PLC module"). Never leave partNumber empty.
+RULES for "partNumber":
+- Use the exact model/part number if visible (e.g. "E3NX-FA41", "LM317T")
+- If no part number is visible, use a specific searchable product name (e.g. "USB-C to USB-A adapter", "24V DC relay")
+- NEVER write "Unknown", "N/A", "unknown", or any placeholder — always use a real term
 Respond ONLY with valid JSON, no markdown, no explanation:
 {"partNumber":"...","manufacturer":"...","description":"...","confidence":"high|medium|low"}`;
 
 const PART_PROMPT = `You are identifying an industrial or electronic component from a photo.
-Identify the part as specifically as possible — manufacturer, model number, and component type.
-IMPORTANT: Always fill "partNumber" with the best searchable term you can find:
-- If a part number or model number is visible, use it exactly (e.g. "E3NX-FA41", "Arduino Uno R3")
-- If no number is visible, use the most specific product name that would return results in a parts search (e.g. "USB-C to USB-A adapter cable", "12V 5A power supply", "NEMA 17 stepper motor")
-Never leave partNumber empty — a good search term is always better than nothing.
+RULES for "partNumber":
+- If a model/part number is printed on the component, use it exactly (e.g. "E3NX-FA41", "Arduino Uno R3")
+- If no number is visible, use the most specific product name a buyer would search for (e.g. "USB 3.0 Type-A to Micro-B cable", "12V 5A DC power supply", "NEMA 17 stepper motor")
+- NEVER write "Unknown", "N/A", "unknown", or any placeholder — describe what you see instead
 Respond ONLY with valid JSON, no markdown, no explanation:
 {"partNumber":"...","manufacturer":"...","description":"...","confidence":"high|medium|low"}`;
 
@@ -53,7 +55,15 @@ export class VisionService {
     const match = raw.match(/\{[\s\S]*\}/);
 
     try {
-      return JSON.parse(match![0]);
+      const result: VisionResult = JSON.parse(match![0]);
+      const placeholders = /^(unknown|n\/a|none|na|not found|not visible|unclear)$/i;
+      if (placeholders.test(result.partNumber?.trim())) {
+        result.partNumber = result.description || '';
+      }
+      if (placeholders.test(result.manufacturer?.trim())) {
+        result.manufacturer = '';
+      }
+      return result;
     } catch {
       this.logger.error(`Failed to parse vision response: ${raw}`);
       return { partNumber: '', manufacturer: '', description: '', confidence: 'low' };
