@@ -9,10 +9,9 @@ export class GraingerScraper extends BaseScraper {
   private readonly base = 'https://www.grainger.com';
 
   async search(query: string): Promise<SearchResult[]> {
-    const browser = await this.createBrowser();
+    const page = await this.getPage();
     const results: SearchResult[] = [];
     try {
-      const page = await this.createPage(browser);
       await page.goto(`${this.base}/search?searchQuery=${encodeURIComponent(query)}`, {
         waitUntil: 'domcontentloaded', timeout: 30000,
       });
@@ -44,13 +43,13 @@ export class GraingerScraper extends BaseScraper {
     } catch (err) {
       this.logger.error(`Grainger search error: ${err.message}`);
     } finally {
-      await browser.close();
+      await this.closePage(page);
     }
     return results;
   }
 
   async getPrice(partNumber: string): Promise<PriceResult> {
-    const browser = await this.createBrowser();
+    const page = await this.getPage();
     const fallback: PriceResult = {
       vendorSlug: this.vendorSlug, vendorName: this.vendorName, vendorSku: partNumber,
       price: null, currency: 'USD', quantityOnHand: 0, source: 'UNKNOWN',
@@ -58,7 +57,6 @@ export class GraingerScraper extends BaseScraper {
       productUrl: '', inStock: false, scrapedAt: new Date().toISOString(),
     };
     try {
-      const page = await this.createPage(browser);
       await page.goto(`${this.base}/search?searchQuery=${encodeURIComponent(partNumber)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await this.delay();
       const link = await page.$('[data-testid="product-list-item"] a, .search-product-card a');
@@ -86,7 +84,7 @@ export class GraingerScraper extends BaseScraper {
       this.logger.error(`Grainger getPrice error: ${err.message}`);
       return { ...fallback, error: err.message };
     } finally {
-      await browser.close();
+      await this.closePage(page);
     }
   }
 }
