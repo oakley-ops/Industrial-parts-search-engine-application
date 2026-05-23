@@ -21,7 +21,7 @@ import { AlertsModule } from './alerts/alerts.module';
         type: 'postgres',
         url: config.get('database.url'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: process.env.NODE_ENV !== 'production',
+        synchronize: true,
         ssl: config.get('database.ssl') ? { rejectUnauthorized: false } : false,
         logging: false,
       }),
