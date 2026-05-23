@@ -80,3 +80,65 @@ describe('AlertsService', () => {
     });
   });
 });
+
+describe('AlertsService.findAllActive', () => {
+  let service: AlertsService;
+  let mockFind: jest.Mock;
+
+  beforeEach(async () => {
+    mockFind = jest.fn();
+    const module = await Test.createTestingModule({
+      providers: [
+        AlertsService,
+        {
+          provide: getRepositoryToken(Alert),
+          useValue: { find: mockFind, findOne: jest.fn(), save: jest.fn(), delete: jest.fn(), create: jest.fn() },
+        },
+      ],
+    }).compile();
+    service = module.get(AlertsService);
+  });
+
+  it('queries only active alerts', async () => {
+    const active = [{ id: '1', isActive: true }];
+    mockFind.mockResolvedValue(active);
+    const result = await service.findAllActive();
+    expect(mockFind).toHaveBeenCalledWith({ where: { isActive: true } });
+    expect(result).toEqual(active);
+  });
+});
+
+describe('AlertsService.disableAndStampAlert', () => {
+  let service: AlertsService;
+  let mockSave: jest.Mock;
+  let mockFindOne: jest.Mock;
+
+  beforeEach(async () => {
+    mockSave = jest.fn().mockResolvedValue(undefined);
+    mockFindOne = jest.fn();
+    const module = await Test.createTestingModule({
+      providers: [
+        AlertsService,
+        {
+          provide: getRepositoryToken(Alert),
+          useValue: { find: jest.fn(), findOne: mockFindOne, save: mockSave, delete: jest.fn(), create: jest.fn() },
+        },
+      ],
+    }).compile();
+    service = module.get(AlertsService);
+  });
+
+  it('sets isActive=false and stamps lastTriggered', async () => {
+    const alert = { id: 'alert-1', isActive: true, lastTriggered: null } as Alert;
+    mockFindOne.mockResolvedValue(alert);
+    await service.disableAndStampAlert('alert-1');
+    expect(mockSave).toHaveBeenCalledWith(
+      expect.objectContaining({ isActive: false, lastTriggered: expect.any(Date) }),
+    );
+  });
+
+  it('throws NotFoundException if alert does not exist', async () => {
+    mockFindOne.mockResolvedValue(null);
+    await expect(service.disableAndStampAlert('missing')).rejects.toThrow(NotFoundException);
+  });
+});

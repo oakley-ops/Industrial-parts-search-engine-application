@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import configuration from './config/configuration';
 import { RedisModule } from './redis/redis.module';
@@ -27,6 +28,7 @@ import { AlertsModule } from './alerts/alerts.module';
       inject: [ConfigService],
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
+    ScheduleModule.forRoot(),
     RedisModule,
     AuthModule,
     UsersModule,
