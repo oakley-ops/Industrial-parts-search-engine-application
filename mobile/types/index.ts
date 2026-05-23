@@ -31,3 +31,16 @@ export interface Alert {
   thresholdValue?: number; notes?: string; isActive: boolean;
   lastTriggered?: string; createdAt: string;
 }
+
+export interface CrossrefSuggestion {
+  partNumber: string;
+  manufacturer: string;
+  matchReason: string;
+  keySpecs: string[];
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export interface CrossrefResult {
+  suggestions: CrossrefSuggestion[];
+  error?: string;
+}

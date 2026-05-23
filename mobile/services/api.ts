@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { CrossrefResult } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 const api = axios.create({ baseURL: API_URL });
@@ -63,5 +64,15 @@ export const createAlert = async (alert: { partNumber: string; vendorSlug?: stri
 };
 export const toggleAlert = async (id: string) => { const { data } = await api.patch(`/alerts/${id}/toggle`); return data; };
 export const deleteAlert = async (id: string) => { const { data } = await api.delete(`/alerts/${id}`); return data; };
+
+// Cross-referencing
+export const findEquivalents = async (
+  partNumber: string,
+  manufacturer?: string,
+  description?: string,
+): Promise<CrossrefResult> => {
+  const { data } = await api.post('/crossref', { partNumber, manufacturer, description });
+  return data as CrossrefResult;
+};
 
 export default api;
