@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { CrossrefResult } from '../types';
+import { CrossrefResult, ProcurementConversation, ProcurementMessage } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 const api = axios.create({ baseURL: API_URL });
@@ -73,6 +73,27 @@ export const findEquivalents = async (
 ): Promise<CrossrefResult> => {
   const { data } = await api.post('/crossref', { partNumber, manufacturer, description });
   return data as CrossrefResult;
+};
+
+// Procurement
+export const createConversation = async (): Promise<ProcurementConversation> => {
+  const { data } = await api.post('/procurement');
+  return data as ProcurementConversation;
+};
+export const getConversations = async (): Promise<ProcurementConversation[]> => {
+  const { data } = await api.get('/procurement');
+  return data as ProcurementConversation[];
+};
+export const getConversation = async (id: string): Promise<ProcurementConversation> => {
+  const { data } = await api.get(`/procurement/${id}`);
+  return data as ProcurementConversation;
+};
+export const sendProcurementMessage = async (id: string, content: string): Promise<ProcurementMessage> => {
+  const { data } = await api.post(`/procurement/${id}/messages`, { content });
+  return data as ProcurementMessage;
+};
+export const deleteProcurementConversation = async (id: string): Promise<void> => {
+  await api.delete(`/procurement/${id}`);
 };
 
 export default api;

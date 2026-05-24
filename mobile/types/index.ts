@@ -44,3 +44,27 @@ export interface CrossrefResult {
   suggestions: CrossrefSuggestion[];
   error?: string;
 }
+
+export interface ProcurementPart {
+  partNumber: string;
+  description: string;
+  quantity: number;
+  notes: string;
+}
+
+export interface ProcurementMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  messageType: 'text' | 'parts_list';
+  content: string;
+  parts: ProcurementPart[] | null;
+  createdAt: string;
+}
+
+export interface ProcurementConversation {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ProcurementMessage[];
+}
