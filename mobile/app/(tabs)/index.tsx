@@ -62,10 +62,10 @@ export default function SearchScreen() {
       },
     })}>
       <View style={s.cardTop}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={s.vendorBadgeRow}>
           <View style={s.badge}><Text style={s.badgeText}>{item.vendorName}</Text></View>
           {countryCode && (
-            <Text style={{ fontSize: 11 }}>
+            <Text style={s.flagEmoji}>
               {isDomestic(item.vendorSlug, countryCode) ? '🇺🇸' : '🌍'}
             </Text>
           )}
@@ -168,7 +168,7 @@ export default function SearchScreen() {
       )}
 
       {!loading && results.length > 0 && (
-        <FlatList data={domesticOnly ? results.filter(r => isDomestic(r.vendorSlug, countryCode)) : results} keyExtractor={(item, i) => `${item.vendorSlug}-${i}`}
+        <FlatList data={domesticOnly && countryCode ? results.filter(r => isDomestic(r.vendorSlug, countryCode)) : results} keyExtractor={(item, i) => `${item.vendorSlug}-${i}`}
           renderItem={renderItem} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false} />
       )}
     </View>
@@ -195,6 +195,8 @@ const s = StyleSheet.create({
   thumbPlaceholder: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: '#f3f4f6', backgroundColor: '#fafafa', justifyContent: 'center', alignItems: 'center' },
   badge: { backgroundColor: '#1e40af', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  vendorBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+  flagEmoji: { fontSize: 14 },
   stockBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   name: { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 4 },
   sku: { fontSize: 12, color: '#6b7280', marginBottom: 8 },
