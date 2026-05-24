@@ -25,6 +25,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: 'Search Parts', tabBarLabel: 'Search', tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} /> }} />
       <Tabs.Screen name="quotes" options={{ title: 'My Quotes', tabBarLabel: 'Quotes', tabBarIcon: ({ color, size }) => <Ionicons name="document-text" size={size} color={color} /> }} />
       <Tabs.Screen name="alerts" options={{ title: 'Alerts', tabBarLabel: 'Alerts', tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} /> }} />
+      <Tabs.Screen name="procure" options={{ title: 'Assistant', tabBarLabel: 'Assistant', tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble-outline" size={size} color={color} /> }} />
     </Tabs>
   );
 }
