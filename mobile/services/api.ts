@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { CrossrefResult, ProcurementConversation, ProcurementMessage, ProcurementPart } from '../types';
+import { CrossrefResult, ProcurementConversation, ProcurementMessage, ProcurementPart, PriceIntelResult } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 const api = axios.create({ baseURL: API_URL });
@@ -94,6 +94,16 @@ export const sendProcurementMessage = async (id: string, content: string): Promi
 };
 export const deleteProcurementConversation = async (id: string): Promise<void> => {
   await api.delete(`/procurement/${id}`);
+};
+
+// Price Intelligence
+export const analyzePrices = async (
+  partNumber: string,
+  description: string | undefined,
+  prices: { vendorName: string; price: number; source: string }[],
+): Promise<PriceIntelResult> => {
+  const { data } = await api.post('/price-intel', { partNumber, description, prices });
+  return data as PriceIntelResult;
 };
 
 export default api;

@@ -68,3 +68,8 @@ export interface ProcurementConversation {
   updatedAt: string;
   messages: ProcurementMessage[];
 }
+
+export interface PriceIntelResult {
+  recommendation: string;
+  confidence: 'high' | 'medium' | 'low';
+}
