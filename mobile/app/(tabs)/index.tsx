@@ -11,6 +11,7 @@ export default function SearchScreen() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [findEquivalent, setFindEquivalent] = useState(false);
 
   useEffect(() => {
     if (params.query) {
@@ -27,7 +28,17 @@ export default function SearchScreen() {
     finally { setLoading(false); }
   };
 
-  const doSearch = async () => triggerSearch(query);
+  const doSearch = async () => {
+    if (!query.trim()) return;
+    if (findEquivalent) {
+      router.push({
+        pathname: '/crossref',
+        params: { partNumber: query.trim() },
+      });
+      return;
+    }
+    triggerSearch(query);
+  };
 
   const renderItem = ({ item }: { item: SearchResult }) => (
     <TouchableOpacity style={s.card} onPress={() => router.push({
@@ -93,6 +104,12 @@ export default function SearchScreen() {
         {['Grainger', 'Motion', 'McMaster'].map(v => (
           <View key={v} style={s.chip}><Text style={s.chipText}>{v}</Text></View>
         ))}
+        <TouchableOpacity
+          style={[s.chip, findEquivalent && s.chipActive]}
+          onPress={() => setFindEquivalent(v => !v)}
+        >
+          <Text style={[s.chipText, findEquivalent && s.chipTextActive]}>🔄 Find Equivalent</Text>
+        </TouchableOpacity>
       </View>
 
       {loading && <View style={s.center}><ActivityIndicator size="large" color="#1e40af" /><Text style={s.loadingText}>Searching all 3 vendors...</Text></View>}
@@ -147,6 +164,8 @@ const s = StyleSheet.create({
   chips: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, gap: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
   chip: { paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#eff6ff', borderRadius: 20, borderWidth: 1, borderColor: '#bfdbfe' },
   chipText: { color: '#1e40af', fontSize: 12, fontWeight: '600' },
+  chipActive: { backgroundColor: '#1e40af', borderColor: '#1e40af' },
+  chipTextActive: { color: '#fff' },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   cardBody: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
