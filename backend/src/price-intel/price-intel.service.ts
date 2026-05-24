@@ -77,7 +77,7 @@ export class PriceIntelService {
 
       const response = await this.client.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 256,
+        max_tokens: 512,
         messages: [{
           role: 'user',
           content: [{ type: 'text', text: `${PRICE_INTEL_PROMPT}\n\n${userMessage}` }],
@@ -90,6 +90,10 @@ export class PriceIntelService {
       const match = raw.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('No JSON in Claude response');
       const result: PriceIntelResult = JSON.parse(match[0]);
+
+      if (typeof result.recommendation !== 'string' || !['high', 'medium', 'low'].includes(result.confidence)) {
+        throw new Error('Claude returned invalid PriceIntelResult shape');
+      }
 
       try {
         await this.redis.setex(cacheKey, 86400, JSON.stringify(result));
