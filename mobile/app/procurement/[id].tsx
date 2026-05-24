@@ -182,7 +182,7 @@ export default function ProcurementChatScreen() {
       const q = await createQuote(newQuoteTitle.trim());
       setShowQuoteModal(false);
       if (addAllParts) {
-        await addAllToQuote(addAllParts, q.id);
+        await addAllToQuote(addAllParts, q.id).catch(() => Alert.alert('Error', 'Could not add all parts'));
       } else if (selectedPart && selectedPrice) {
         await addLineItem(q.id, {
           partNumber: selectedPart.partNumber,
@@ -257,9 +257,9 @@ export default function ProcurementChatScreen() {
             <Text style={s.addAllBtnText}>{allLoaded ? 'Add All to Quote' : 'Loading prices...'}</Text>
           </TouchableOpacity>
           <View style={s.partsList}>
-            {msg.parts.map((part, i) => (
+            {msg.parts.map((part) => (
               <PartCard
-                key={i}
+                key={part.partNumber}
                 part={part}
                 prices={partPrices[part.partNumber] || []}
                 loadingPrice={partPricesLoading[part.partNumber] ?? true}
