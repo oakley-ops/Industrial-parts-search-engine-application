@@ -29,5 +29,8 @@ export class ProcurementMessage {
 
   @Column({ type: 'jsonb', nullable: true }) parts: ProcurementPart[] | null;
 
+  @Column({ name: 'has_image', default: false })
+  hasImage: boolean;
+
   @CreateDateColumn({ name: 'created_at' }) createdAt: Date;
 }
