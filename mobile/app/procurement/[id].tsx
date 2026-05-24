@@ -61,6 +61,7 @@ export default function ProcurementChatScreen() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
   const [imageCache, setImageCache] = useState<Record<string, string>>({});
 
   // Price state lifted to parent so "Add All to Quote" can access all resolved prices
@@ -141,6 +142,7 @@ export default function ProcurementChatScreen() {
       );
       if (!manipulated.base64) throw new Error('No base64');
       setPendingImage(manipulated.base64);
+      setPendingImageUri(manipulated.uri);
     } catch {
       Alert.alert('Could not process image. Try again.');
     }
@@ -168,8 +170,10 @@ export default function ProcurementChatScreen() {
     if ((!input.trim() && !pendingImage) || sending) return;
     const text = input.trim();
     const imageToSend = pendingImage;
+    const imageUriToShow = pendingImageUri;
     setInput('');
     setPendingImage(null);
+    setPendingImageUri(null);
     setSending(true);
 
     const tempId = `temp-${Date.now()}`;
@@ -183,8 +187,8 @@ export default function ProcurementChatScreen() {
       createdAt: new Date().toISOString(),
     };
     setMessages(prev => [...prev, optimistic]);
-    if (imageToSend) {
-      setImageCache(prev => ({ ...prev, [tempId]: imageToSend }));
+    if (imageUriToShow) {
+      setImageCache(prev => ({ ...prev, [tempId]: imageUriToShow }));
     }
 
     try {
@@ -199,6 +203,7 @@ export default function ProcurementChatScreen() {
       setMessages(prev => prev.filter(m => m.id !== tempId));
       setImageCache(prev => { const next = { ...prev }; delete next[tempId]; return next; });
       if (imageToSend) setPendingImage(imageToSend);
+      if (imageUriToShow) setPendingImageUri(imageUriToShow);
     } finally {
       setSending(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -343,7 +348,7 @@ export default function ProcurementChatScreen() {
       <View key={msg.id} style={[s.bubble, isUser ? s.userBubble : s.assistantBubble]}>
         {isUser && cachedImage && (
           <Image
-            source={{ uri: `data:image/jpeg;base64,${cachedImage}` }}
+            source={{ uri: cachedImage }}
             style={s.msgImage}
             resizeMode="cover"
           />
@@ -398,14 +403,14 @@ export default function ProcurementChatScreen() {
         </ScrollView>
 
         <View>
-          {pendingImage && (
+          {pendingImage && pendingImageUri && (
             <View style={s.previewStrip}>
               <Image
-                source={{ uri: `data:image/jpeg;base64,${pendingImage}` }}
+                source={{ uri: pendingImageUri }}
                 style={s.previewThumb}
                 resizeMode="cover"
               />
-              <TouchableOpacity onPress={() => setPendingImage(null)} style={s.previewDismiss}>
+              <TouchableOpacity onPress={() => { setPendingImage(null); setPendingImageUri(null); }} style={s.previewDismiss}>
                 <Ionicons name="close-circle" size={20} color="#6b7280" />
               </TouchableOpacity>
             </View>
