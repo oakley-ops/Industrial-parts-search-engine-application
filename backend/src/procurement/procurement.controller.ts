@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { ProcurementService } from './procurement.service';
@@ -8,6 +8,10 @@ class SendMessageDto {
   @IsString()
   @IsNotEmpty()
   content: string;
+
+  @IsString()
+  @IsOptional()
+  imageBase64?: string;
 }
 
 @Controller('procurement')
@@ -36,7 +40,7 @@ export class ProcurementController {
     @Body() dto: SendMessageDto,
     @CurrentUser() user: { id: string },
   ) {
-    return this.svc.sendMessage(id, user.id, dto.content);
+    return this.svc.sendMessage(id, user.id, dto.content, dto.imageBase64);
   }
 
   @Delete(':id')

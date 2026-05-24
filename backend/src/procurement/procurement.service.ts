@@ -82,12 +82,13 @@ export class ProcurementService {
     conversationId: string,
     userId: string,
     userContent: string,
+    imageBase64?: string,
   ): Promise<ProcurementMessage> {
     const conversation = await this.convRepo.findOne({ where: { id: conversationId, userId } });
     if (!conversation) throw new NotFoundException('Conversation not found');
 
     await this.msgRepo.save(
-      this.msgRepo.create({ conversationId, role: 'user', messageType: 'text', content: userContent, parts: null }),
+      this.msgRepo.create({ conversationId, role: 'user', messageType: 'text', content: userContent, parts: null, hasImage: !!imageBase64 }),
     );
 
     const history = await this.msgRepo.find({
@@ -95,12 +96,23 @@ export class ProcurementService {
       order: { createdAt: 'ASC' },
     });
 
-    const messages = history.map(m => ({
+    const messages: Anthropic.MessageParam[] = history.slice(0, -1).map(m => ({
       role: m.role as 'user' | 'assistant',
       content: m.role === 'assistant' && m.messageType === 'parts_list'
         ? `[Parts list generated: ${m.content}]`
-        : m.content,
+        : m.hasImage
+          ? `[Image attached] ${m.content}`
+          : m.content,
     }));
+
+    const userClaudeContent: Anthropic.MessageParam['content'] = imageBase64
+      ? [
+          { type: 'image' as const, source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data: imageBase64 } },
+          { type: 'text' as const, text: userContent || 'What is this part?' },
+        ]
+      : userContent;
+
+    messages.push({ role: 'user', content: userClaudeContent });
 
     try {
       const response = await this.client.messages.create({
