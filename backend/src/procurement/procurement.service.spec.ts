@@ -109,6 +109,23 @@ describe('ProcurementService', () => {
       expect(convRepo.update).toHaveBeenCalledWith('conv-1', { title: 'Grundfos CM5 repair' });
     });
 
+    it('does not update title when conversation already has a custom title', async () => {
+      convRepo.findOne.mockResolvedValue({ ...conv, title: 'Custom Title' });
+      mockCreate.mockResolvedValue({
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            type: 'text',
+            title: 'Some Title',
+            content: 'Got it, one more question.',
+          }),
+        }],
+      });
+
+      await service.sendMessage('conv-1', 'user-1', 'follow up');
+      expect(convRepo.update).not.toHaveBeenCalled();
+    });
+
     it('returns fallback text message on Claude parse failure', async () => {
       mockCreate.mockResolvedValue({
         content: [{ type: 'text', text: 'not valid json' }],

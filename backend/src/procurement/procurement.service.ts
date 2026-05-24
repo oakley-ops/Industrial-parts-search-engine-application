@@ -110,9 +110,12 @@ export class ProcurementService {
         messages,
       });
 
-      const raw = (response.content[0] as { type: string; text: string }).text.trim();
+      const block = response.content[0];
+      if (!block || block.type !== 'text') throw new Error('Unexpected content block type');
+      const raw = block.text.trim();
       const match = raw.match(/\{[\s\S]*\}/);
-      const parsed = JSON.parse(match![0]);
+      if (!match) throw new Error('No JSON object in Claude response');
+      const parsed = JSON.parse(match[0]);
 
       if (parsed.title && conversation.title === 'New Conversation') {
         await this.convRepo.update(conversationId, { title: parsed.title });
@@ -140,7 +143,7 @@ export class ProcurementService {
         }),
       );
     } catch (err) {
-      this.logger.error(`Procurement sendMessage failed: ${err}`);
+      this.logger.error('Procurement sendMessage failed', err instanceof Error ? err.stack : err);
       return this.msgRepo.save(
         this.msgRepo.create({
           conversationId,
