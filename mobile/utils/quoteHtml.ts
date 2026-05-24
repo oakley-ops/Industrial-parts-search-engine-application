@@ -10,7 +10,7 @@ function escapeHtml(s: string): string {
 }
 
 function formatCurrency(amount: number): string {
-  return `$${amount.toFixed(2)}`;
+  return `$${Number(amount).toFixed(2)}`;
 }
 
 function formatDate(iso: string): string {
@@ -36,7 +36,7 @@ function lineItemRow(item: QuoteLineItem): string {
 }
 
 export function buildQuoteHtml(quote: Quote): string {
-  const total = quote.lineItems.reduce((s, i) => s + Math.round(i.totalPrice * 100), 0) / 100;
+  const total = quote.lineItems.reduce((s, i) => s + Math.round(Number(i.totalPrice) * 100), 0) / 100;
   const snapshotDate =
     quote.lineItems.length > 0
       ? formatDate(
