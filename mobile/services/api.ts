@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { CrossrefResult, ProcurementConversation, ProcurementMessage } from '../types';
+import { CrossrefResult, ProcurementConversation, ProcurementMessage, ProcurementPart } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 const api = axios.create({ baseURL: API_URL });
