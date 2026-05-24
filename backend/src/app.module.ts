@@ -14,6 +14,7 @@ import { AlertsModule } from './alerts/alerts.module';
 import { VisionModule } from './vision/vision.module';
 import { CrossrefModule } from './crossref/crossref.module';
 import { ProcurementModule } from './procurement/procurement.module';
+import { PriceIntelModule } from './price-intel/price-intel.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ProcurementModule } from './procurement/procurement.module';
     VisionModule,
     CrossrefModule,
     ProcurementModule,
+    PriceIntelModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
