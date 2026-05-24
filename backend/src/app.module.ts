@@ -13,6 +13,7 @@ import { QuotesModule } from './quotes/quotes.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { VisionModule } from './vision/vision.module';
 import { CrossrefModule } from './crossref/crossref.module';
+import { ProcurementModule } from './procurement/procurement.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { CrossrefModule } from './crossref/crossref.module';
     AlertsModule,
     VisionModule,
     CrossrefModule,
+    ProcurementModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
