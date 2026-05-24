@@ -9,8 +9,8 @@ class SendMessageDto {
   @IsNotEmpty()
   content: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   imageBase64?: string;
 }
 
