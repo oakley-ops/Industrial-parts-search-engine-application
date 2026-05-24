@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common';
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { ProcurementService } from './procurement.service';
@@ -10,6 +10,7 @@ class SendMessageDto {
   content: string;
 
   @IsOptional()
+  @MaxLength(2000000)
   @IsString()
   imageBase64?: string;
 }
