@@ -73,3 +73,15 @@ export interface PriceIntelResult {
   recommendation: string;
   confidence: 'high' | 'medium' | 'low';
 }
+
+export interface Branch {
+  vendor: 'grainger' | 'motion';
+  name: string;
+  city: string;
+  state: string;
+  lat: number;
+  lng: number;
+  url: string;
+}
+
+export type NearbyBranch = Branch & { distance: number };
