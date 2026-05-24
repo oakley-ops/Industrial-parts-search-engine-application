@@ -121,14 +121,14 @@ export default function ProcurementChatScreen() {
           Alert.alert('Camera access required', 'Enable it in Settings.');
           return;
         }
-        result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
+        result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 });
       } else {
-        result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
+        result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
       }
       if (result.canceled || !result.assets?.[0]) return;
       await processImage(result.assets[0].uri);
     } catch {
-      Alert.alert('Could not access image source. Try again.');
+      Alert.alert('Error', 'Could not access image source. Try again.');
     }
   };
 
@@ -197,6 +197,7 @@ export default function ProcurementChatScreen() {
     } catch {
       Alert.alert('Error', 'Could not send message');
       setMessages(prev => prev.filter(m => m.id !== tempId));
+      setImageCache(prev => { const next = { ...prev }; delete next[tempId]; return next; });
       if (imageToSend) setPendingImage(imageToSend);
     } finally {
       setSending(false);
