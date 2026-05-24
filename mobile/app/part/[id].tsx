@@ -85,10 +85,10 @@ export default function PartDetailScreen() {
     catch { Alert.alert('Error', 'Could not create quote'); setSaving(false); }
   };
 
-  const best = prices.filter(p => p.price !== null).sort((a, b) => (a.price || 0) - (b.price || 0))[0];
+  const best = prices.filter(p => p.price !== null && p.price > 0).sort((a, b) => a.price! - b.price!)[0];
 
   const noStock = !loading && prices.length > 0 && prices.every(
-    p => p.price === null || p.source === 'BACKORDER' || !!p.error,
+    p => p.price === null || p.price === 0 || p.source === 'BACKORDER' || !!p.error,
   );
 
   const goToCrossref = () => router.push({
@@ -103,7 +103,7 @@ export default function PartDetailScreen() {
     const gen = analyzeGenRef.current;
     try {
       const validPrices = prices
-        .filter(p => p.price !== null)
+        .filter(p => p.price !== null && p.price > 0)
         .map(p => ({ vendorName: p.vendorName, price: p.price!, source: p.source }));
       const result = await analyzePrices(id, undefined, validPrices);
       if (gen === analyzeGenRef.current) {
@@ -244,7 +244,7 @@ export default function PartDetailScreen() {
               </TouchableOpacity>
             </View>
           )}
-          {!loading && prices.some(p => p.price !== null) && (
+          {!loading && prices.some(p => p.price !== null && p.price > 0) && (
             priceIntel ? (
               <View style={s.priceIntelCard}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>

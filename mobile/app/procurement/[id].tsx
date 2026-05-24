@@ -22,7 +22,7 @@ function PartCard({
   loadingPrice: boolean;
   onAddToQuote: (part: ProcurementPart, price: PriceResult | null) => void;
 }) {
-  const best = prices.filter(p => p.price !== null).sort((a, b) => (a.price || 0) - (b.price || 0))[0] || null;
+  const best = prices.filter(p => p.price !== null && p.price > 0).sort((a, b) => a.price! - b.price!)[0] || null;
 
   return (
     <View style={ps.card}>
@@ -211,7 +211,7 @@ export default function ProcurementChatScreen() {
     try {
       for (const part of parts) {
         const prices = partPrices[part.partNumber] || [];
-        const best = prices.filter(p => p.price !== null).sort((a, b) => (a.price || 0) - (b.price || 0))[0];
+        const best = prices.filter(p => p.price !== null && p.price > 0).sort((a, b) => a.price! - b.price!)[0];
         if (!best) continue;
         await addLineItem(quoteId, {
           partNumber: part.partNumber,
