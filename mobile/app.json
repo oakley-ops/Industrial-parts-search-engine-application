@@ -4,9 +4,9 @@
     "slug": "industrial-parts-finder",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "splash": {
-      "backgroundColor": "#1e40af"
+      "backgroundColor": "#0F1117"
     },
     "ios": {
       "supportsTablet": false,
@@ -14,7 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#1e40af"
+        "backgroundColor": "#0F1117"
       },
       "package": "com.oakleyops.partsfinder"
     },

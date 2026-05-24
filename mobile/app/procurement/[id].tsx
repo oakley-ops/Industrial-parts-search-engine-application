@@ -10,6 +10,7 @@ import {
   getQuotes, createQuote, addLineItem, getPricesForPart,
 } from '../../services/api';
 import { ProcurementConversation, ProcurementMessage, ProcurementPart, Quote, PriceResult } from '../../types';
+import { theme } from '../../constants/theme';
 
 function PartCard({
   part,
@@ -34,16 +35,19 @@ function PartCard({
       {part.notes ? <Text style={ps.notes}>{part.notes}</Text> : null}
       {loadingPrice ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-          <ActivityIndicator size="small" color="#1e40af" />
-          <Text style={{ color: '#6b7280', fontSize: 12 }}>Fetching prices...</Text>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>Fetching prices...</Text>
         </View>
       ) : best ? (
-        <Text style={ps.price}>${best.price!.toFixed(2)} <Text style={ps.priceVendor}>({best.vendorName})</Text></Text>
+        <Text style={ps.price}>
+          ${best.price!.toFixed(2)}{' '}
+          <Text style={ps.priceVendor}>({best.vendorName})</Text>
+        </Text>
       ) : (
         <Text style={ps.noPrice}>Price unavailable</Text>
       )}
       <TouchableOpacity style={ps.addBtn} onPress={() => onAddToQuote(part, best)}>
-        <Ionicons name="add-circle-outline" size={16} color="#1e40af" />
+        <Ionicons name="add-circle-outline" size={16} color={theme.colors.primary} />
         <Text style={ps.addBtnText}>Add to Quote</Text>
       </TouchableOpacity>
     </View>
@@ -58,11 +62,9 @@ export default function ProcurementChatScreen() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Price state lifted to parent so "Add All to Quote" can access all resolved prices
   const [partPrices, setPartPrices] = useState<Record<string, PriceResult[]>>({});
   const [partPricesLoading, setPartPricesLoading] = useState<Record<string, boolean>>({});
 
-  // Quote modal state
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [selectedPart, setSelectedPart] = useState<ProcurementPart | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<PriceResult | null>(null);
@@ -70,14 +72,12 @@ export default function ProcurementChatScreen() {
   const [newQuoteTitle, setNewQuoteTitle] = useState('');
   const [savingQuote, setSavingQuote] = useState(false);
   const [qty, setQty] = useState('1');
-  // When non-null, the quote modal is in "add all" mode
   const [addAllParts, setAddAllParts] = useState<ProcurementPart[] | null>(null);
 
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => { load(); }, [id]);
 
-  // Fetch prices for all parts in parts_list messages whenever messages change
   useEffect(() => {
     messages.forEach(msg => {
       if (msg.messageType === 'parts_list' && msg.parts) {
@@ -102,9 +102,7 @@ export default function ProcurementChatScreen() {
       setMessages(conv.messages || []);
     } catch {
       Alert.alert('Error', 'Could not load conversation');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleSend = async () => {
@@ -200,9 +198,7 @@ export default function ProcurementChatScreen() {
       }
     } catch {
       Alert.alert('Error', 'Could not create quote');
-    } finally {
-      setSavingQuote(false);
-    }
+    } finally { setSavingQuote(false); }
   };
 
   const addAllToQuote = async (parts: ProcurementPart[], quoteId: string) => {
@@ -228,9 +224,7 @@ export default function ProcurementChatScreen() {
       Alert.alert('Done', `${added} of ${parts.length} parts added to quote.`);
     } catch {
       Alert.alert('Error', 'Could not add all parts');
-    } finally {
-      setSavingQuote(false);
-    }
+    } finally { setSavingQuote(false); }
   };
 
   const openAddAllModal = async (parts: ProcurementPart[]) => {
@@ -253,7 +247,7 @@ export default function ProcurementChatScreen() {
             onPress={() => openAddAllModal(msg.parts!)}
             disabled={!allLoaded}
           >
-            <Ionicons name="add-circle" size={16} color="#fff" />
+            <Ionicons name="add-circle" size={16} color={theme.colors.white} />
             <Text style={s.addAllBtnText}>{allLoaded ? 'Add All to Quote' : 'Loading prices...'}</Text>
           </TouchableOpacity>
           <View style={s.partsList}>
@@ -281,7 +275,7 @@ export default function ProcurementChatScreen() {
   if (loading) {
     return (
       <View style={s.center}>
-        <ActivityIndicator size="large" color="#1e40af" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -290,7 +284,7 @@ export default function ProcurementChatScreen() {
     <View style={s.container}>
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={s.headerTitle} numberOfLines={1}>{conversation?.title || 'Assistant'}</Text>
         <View style={{ width: 32 }} />
@@ -306,13 +300,15 @@ export default function ProcurementChatScreen() {
             <View style={s.emptyChat}>
               <Text style={{ fontSize: 48, marginBottom: 12 }}>🔧</Text>
               <Text style={s.emptyChatTitle}>Describe your repair job</Text>
-              <Text style={s.emptyChatSub}>Tell me what equipment needs repair and I'll help you identify the parts you need.</Text>
+              <Text style={s.emptyChatSub}>
+                Tell me what equipment needs repair and I'll help you identify the parts you need.
+              </Text>
             </View>
           )}
           {messages.map((msg, i) => renderMessage(msg, i))}
           {sending && (
             <View style={s.assistantBubble}>
-              <ActivityIndicator size="small" color="#1e40af" />
+              <ActivityIndicator size="small" color={theme.colors.primary} />
             </View>
           )}
         </ScrollView>
@@ -321,6 +317,7 @@ export default function ProcurementChatScreen() {
           <TextInput
             style={s.input}
             placeholder="Describe the repair job..."
+            placeholderTextColor={theme.colors.textMuted}
             value={input}
             onChangeText={setInput}
             multiline
@@ -332,7 +329,11 @@ export default function ProcurementChatScreen() {
             onPress={handleSend}
             disabled={!input.trim() || sending}
           >
-            <Ionicons name="send" size={20} color={input.trim() && !sending ? '#fff' : '#9ca3af'} />
+            <Ionicons
+              name="send"
+              size={20}
+              color={input.trim() && !sending ? theme.colors.white : theme.colors.textMuted}
+            />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -342,24 +343,26 @@ export default function ProcurementChatScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <Text style={s.modalTitle}>Add to Quote</Text>
             <TouchableOpacity onPress={() => setShowQuoteModal(false)}>
-              <Ionicons name="close" size={24} color="#111827" />
+              <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
           {addAllParts ? (
             <View style={s.selectedBanner}>
-              <Text style={{ fontWeight: '700', color: '#1e40af' }}>Adding {addAllParts.length} parts to quote</Text>
+              <Text style={{ fontWeight: '700', color: theme.colors.primary }}>
+                Adding {addAllParts.length} parts to quote
+              </Text>
             </View>
           ) : selectedPart ? (
             <View style={s.selectedBanner}>
-              <Text style={{ fontWeight: '700', color: '#1e40af' }}>{selectedPart.partNumber}</Text>
-              <Text style={{ fontWeight: '700' }}>
+              <Text style={{ fontWeight: '700', color: theme.colors.primary }}>{selectedPart.partNumber}</Text>
+              <Text style={{ fontWeight: '700', color: theme.colors.textPrimary }}>
                 {selectedPrice ? `$${selectedPrice.price?.toFixed(2)}` : 'No price'}
               </Text>
             </View>
           ) : null}
           {!addAllParts && (
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <Text style={{ fontSize: 16, fontWeight: '600' }}>Quantity</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.textPrimary }}>Quantity</Text>
               <TextInput style={s.qtyInput} value={qty} onChangeText={setQty} keyboardType="number-pad" />
             </View>
           )}
@@ -367,21 +370,34 @@ export default function ProcurementChatScreen() {
             <>
               <Text style={s.sectionLabel}>ADD TO EXISTING QUOTE</Text>
               {quotes.filter(q => q.status === 'draft').map(q => (
-                <TouchableOpacity key={q.id} style={s.quoteRow} onPress={() => addToExistingQuote(q.id)} disabled={savingQuote}>
-                  <Text style={{ fontWeight: '600', color: '#111827' }}>{q.title}</Text>
-                  <Text style={{ color: '#6b7280', fontSize: 13 }}>{q.lineItems?.length || 0} items</Text>
+                <TouchableOpacity
+                  key={q.id}
+                  style={s.quoteRow}
+                  onPress={() => addToExistingQuote(q.id)}
+                  disabled={savingQuote}
+                >
+                  <Text style={{ fontWeight: '600', color: theme.colors.textPrimary }}>{q.title}</Text>
+                  <Text style={{ color: theme.colors.textMuted, fontSize: 13 }}>{q.lineItems?.length || 0} items</Text>
                 </TouchableOpacity>
               ))}
             </>
           )}
           <Text style={[s.sectionLabel, { marginTop: 16 }]}>CREATE NEW QUOTE</Text>
-          <TextInput style={s.textInput} placeholder="Quote title..." value={newQuoteTitle} onChangeText={setNewQuoteTitle} />
+          <TextInput
+            style={s.textInput}
+            placeholder="Quote title..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={newQuoteTitle}
+            onChangeText={setNewQuoteTitle}
+          />
           <TouchableOpacity
             style={[s.createBtn, (!newQuoteTitle.trim() || savingQuote) && { opacity: 0.5 }]}
             onPress={createAndAdd}
             disabled={!newQuoteTitle.trim() || savingQuote}
           >
-            {savingQuote ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Create & Add</Text>}
+            {savingQuote
+              ? <ActivityIndicator color={theme.colors.white} />
+              : <Text style={{ color: theme.colors.white, fontWeight: '700', fontSize: 16 }}>Create & Add</Text>}
           </TouchableOpacity>
         </View>
       </Modal>
@@ -390,50 +406,176 @@ export default function ProcurementChatScreen() {
 }
 
 const ps = StyleSheet.create({
-  card: { backgroundColor: '#f8fafc', borderRadius: 10, padding: 12, marginTop: 10, borderWidth: 1, borderColor: '#e2e8f0' },
-  partNumber: { fontSize: 15, fontWeight: '800', color: '#111827', flex: 1 },
-  qty: { fontSize: 13, color: '#6b7280', fontWeight: '600' },
-  description: { fontSize: 13, color: '#374151', marginBottom: 2 },
-  notes: { fontSize: 12, color: '#6b7280', fontStyle: 'italic', marginBottom: 4 },
-  price: { fontSize: 16, fontWeight: '800', color: '#1e40af', marginTop: 6 },
-  priceVendor: { fontSize: 12, fontWeight: '400', color: '#6b7280' },
-  noPrice: { fontSize: 13, color: '#9ca3af', fontStyle: 'italic', marginTop: 6 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10, borderWidth: 1.5, borderColor: '#1e40af', borderRadius: 6, padding: 8, justifyContent: 'center' },
-  addBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 13 },
+  card: {
+    backgroundColor: theme.colors.surfaceElevated,
+    borderRadius: theme.radius.md,
+    padding: 12,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  partNumber: { fontSize: 15, fontWeight: '800', color: theme.colors.textPrimary, flex: 1 },
+  qty: { fontSize: 13, color: theme.colors.textMuted, fontWeight: '600' },
+  description: { fontSize: 13, color: theme.colors.textSecondary, marginBottom: 2 },
+  notes: { fontSize: 12, color: theme.colors.textMuted, fontStyle: 'italic', marginBottom: 4 },
+  price: { fontSize: 16, fontWeight: '800', color: theme.colors.primary, marginTop: 6 },
+  priceVendor: { fontSize: 12, fontWeight: '400', color: theme.colors.textMuted },
+  noPrice: { fontSize: 13, color: theme.colors.textMuted, fontStyle: 'italic', marginTop: 6 },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 10,
+    borderWidth: 1.5,
+    borderColor: theme.colors.primary,
+    borderRadius: theme.radius.sm,
+    padding: 8,
+    justifyContent: 'center',
+  },
+  addBtnText: { color: theme.colors.primary, fontWeight: '600', fontSize: 13 },
 });
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#1e40af', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.surface,
+    paddingTop: 56,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700', flex: 1, textAlign: 'center' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+  },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   emptyChat: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
-  emptyChatTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  emptyChatSub: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 22 },
+  emptyChatTitle: { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary, marginBottom: 8 },
+  emptyChatSub: { fontSize: 14, color: theme.colors.textMuted, textAlign: 'center', lineHeight: 22 },
+
+  // Chat bubbles
   bubble: { maxWidth: '80%', borderRadius: 16, padding: 12, marginBottom: 10 },
-  userBubble: { backgroundColor: '#1e40af', alignSelf: 'flex-end', borderBottomRightRadius: 4 },
-  assistantBubble: { backgroundColor: '#fff', alignSelf: 'flex-start', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#e5e7eb', padding: 14, borderRadius: 16, marginBottom: 10, maxWidth: '92%' },
-  bubbleText: { fontSize: 15, color: '#111827', lineHeight: 22 },
-  userBubbleText: { color: '#fff' },
-  addAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#1e40af', borderRadius: 8, padding: 10, justifyContent: 'center', marginTop: 10 },
-  addAllBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  partsList: { marginTop: 4 },
-  inputBar: {
-    flexDirection: 'row', alignItems: 'flex-end', gap: 10, padding: 12,
-    backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e5e7eb',
+  userBubble: { backgroundColor: theme.colors.primary, alignSelf: 'flex-end', borderBottomRightRadius: 4 },
+  assistantBubble: {
+    backgroundColor: theme.colors.surface,
+    alignSelf: 'flex-start',
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 14,
+    borderRadius: 16,
+    marginBottom: 10,
+    maxWidth: '92%',
   },
-  input: { flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 12, fontSize: 15, maxHeight: 100 },
-  sendBtn: { backgroundColor: '#1e40af', borderRadius: 10, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  sendBtnOff: { backgroundColor: '#f3f4f6' },
-  modal: { flex: 1, padding: 24, backgroundColor: '#fff' },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
-  selectedBanner: { backgroundColor: '#eff6ff', borderRadius: 10, padding: 12, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between' },
-  qtyInput: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, width: 80, textAlign: 'center', fontSize: 16 },
-  sectionLabel: { fontSize: 12, fontWeight: '700', color: '#6b7280', marginBottom: 8, letterSpacing: 0.5 },
-  quoteRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, marginBottom: 8 },
-  textInput: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 14, fontSize: 15, marginBottom: 12 },
-  createBtn: { backgroundColor: '#1e40af', borderRadius: 10, padding: 16, alignItems: 'center' },
+  bubbleText: { fontSize: 15, color: theme.colors.textPrimary, lineHeight: 22 },
+  userBubbleText: { color: theme.colors.white },
+  addAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    padding: 10,
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  addAllBtnText: { color: theme.colors.white, fontWeight: '700', fontSize: 13 },
+  partsList: { marginTop: 4 },
+
+  // Input bar
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+    padding: 12,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.xl,
+    padding: 12,
+    fontSize: 15,
+    maxHeight: 100,
+    backgroundColor: theme.colors.surfaceElevated,
+    color: theme.colors.textPrimary,
+  },
+  sendBtn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.xl,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendBtnOff: { backgroundColor: theme.colors.surfaceElevated },
+
+  // Modal
+  modal: { flex: 1, padding: 24, backgroundColor: theme.colors.surface },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary },
+  selectedBanner: {
+    backgroundColor: theme.colors.primarySubtle,
+    borderRadius: theme.radius.xl,
+    padding: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  qtyInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    padding: 10,
+    width: 80,
+    textAlign: 'center',
+    fontSize: 16,
+    backgroundColor: theme.colors.surfaceElevated,
+    color: theme.colors.textPrimary,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.colors.textMuted,
+    marginBottom: 8,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  quoteRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.xl,
+    marginBottom: 8,
+    backgroundColor: theme.colors.surfaceElevated,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.xl,
+    padding: 14,
+    fontSize: 15,
+    marginBottom: 12,
+    backgroundColor: theme.colors.surfaceElevated,
+    color: theme.colors.textPrimary,
+  },
+  createBtn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.xl,
+    padding: 16,
+    alignItems: 'center',
+  },
 });

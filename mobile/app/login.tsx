@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { login, register } from '../services/api';
+import { theme } from '../constants/theme';
 
 export default function LoginScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -29,14 +30,43 @@ export default function LoginScreen() {
         <Text style={s.sub}>Industrial Parts Search Engine</Text>
       </View>
       <View style={s.form}>
-        {!isLogin && <TextInput style={s.input} placeholder="Your name" value={name} onChangeText={setName} autoCapitalize="words" />}
-        <TextInput style={s.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-        <TextInput style={s.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+        {!isLogin && (
+          <TextInput
+            style={s.input}
+            placeholder="Your name"
+            placeholderTextColor={theme.colors.textMuted}
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+          />
+        )}
+        <TextInput
+          style={s.input}
+          placeholder="Email"
+          placeholderTextColor={theme.colors.textMuted}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={s.input}
+          placeholder="Password"
+          placeholderTextColor={theme.colors.textMuted}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
         <TouchableOpacity style={[s.btn, loading && s.btnDim]} onPress={submit} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>{isLogin ? 'Sign In' : 'Create Account'}</Text>}
+          {loading
+            ? <ActivityIndicator color={theme.colors.white} />
+            : <Text style={s.btnText}>{isLogin ? 'Sign In' : 'Create Account'}</Text>}
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setIsLogin(!isLogin)} style={s.toggle}>
-          <Text style={s.toggleText}>{isLogin ? "No account? Register" : "Have an account? Sign In"}</Text>
+          <Text style={s.toggleText}>
+            {isLogin ? 'No account? ' : 'Have an account? '}
+            <Text style={s.toggleLink}>{isLogin ? 'Register' : 'Sign In'}</Text>
+          </Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -44,16 +74,50 @@ export default function LoginScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e40af', justifyContent: 'center', padding: 24 },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    justifyContent: 'center',
+    padding: theme.spacing.xl,
+  },
   hero: { alignItems: 'center', marginBottom: 32 },
   logo: { fontSize: 64, marginBottom: 12 },
-  title: { fontSize: 32, fontWeight: '800', color: '#fff', marginBottom: 4 },
-  sub: { fontSize: 14, color: '#93c5fd' },
-  form: { backgroundColor: '#fff', borderRadius: 16, padding: 24 },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 14, marginBottom: 12, fontSize: 16 },
-  btn: { backgroundColor: '#1e40af', borderRadius: 10, padding: 16, alignItems: 'center', marginTop: 4 },
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: theme.colors.textPrimary,
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  sub: { fontSize: 14, color: theme.colors.primary },
+
+  form: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xxl,
+    padding: theme.spacing.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    padding: 14,
+    marginBottom: 12,
+    fontSize: 16,
+    backgroundColor: theme.colors.surfaceElevated,
+    color: theme.colors.textPrimary,
+  },
+  btn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 4,
+  },
   btnDim: { opacity: 0.6 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  btnText: { color: theme.colors.white, fontSize: 16, fontWeight: '700' },
   toggle: { alignItems: 'center', marginTop: 16 },
-  toggleText: { color: '#6b7280', fontSize: 14 },
+  toggleText: { color: theme.colors.textMuted, fontSize: 14 },
+  toggleLink: { color: theme.colors.secondary, fontWeight: '600' },
 });
