@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   TextInput, ActivityIndicator, Alert, Modal, KeyboardAvoidingView, Platform,
+  Image, ActionSheetIOS,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getConversation, sendProcurementMessage,
@@ -57,6 +60,8 @@ export default function ProcurementChatScreen() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [imageCache, setImageCache] = useState<Record<string, string>>({});
 
   // Price state lifted to parent so "Add All to Quote" can access all resolved prices
   const [partPrices, setPartPrices] = useState<Record<string, PriceResult[]>>({});
@@ -107,24 +112,83 @@ export default function ProcurementChatScreen() {
     }
   };
 
+  const pickImage = async (useCamera: boolean) => {
+    try {
+      let result: ImagePicker.ImagePickerResult;
+      if (useCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Camera access required', 'Enable it in Settings.');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
+      }
+      if (result.canceled || !result.assets?.[0]) return;
+      await processImage(result.assets[0].uri);
+    } catch {
+      Alert.alert('Could not access image source. Try again.');
+    }
+  };
+
+  const processImage = async (uri: string) => {
+    try {
+      const manipulated = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1024 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+      );
+      if (!manipulated.base64) throw new Error('No base64');
+      setPendingImage(manipulated.base64);
+    } catch {
+      Alert.alert('Could not process image. Try again.');
+    }
+  };
+
+  const openImagePicker = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ['Cancel', 'Take Photo', 'Choose from Library'], cancelButtonIndex: 0 },
+        (idx) => {
+          if (idx === 1) pickImage(true);
+          if (idx === 2) pickImage(false);
+        },
+      );
+    } else {
+      Alert.alert('Attach Photo', 'Select source', [
+        { text: 'Take Photo', onPress: () => pickImage(true) },
+        { text: 'Choose from Library', onPress: () => pickImage(false) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || sending) return;
+    if ((!input.trim() && !pendingImage) || sending) return;
     const text = input.trim();
+    const imageToSend = pendingImage;
     setInput('');
+    setPendingImage(null);
     setSending(true);
 
+    const tempId = `temp-${Date.now()}`;
     const optimistic: ProcurementMessage = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       role: 'user',
       messageType: 'text',
       content: text,
       parts: null,
+      hasImage: !!imageToSend,
       createdAt: new Date().toISOString(),
     };
     setMessages(prev => [...prev, optimistic]);
+    if (imageToSend) {
+      setImageCache(prev => ({ ...prev, [tempId]: imageToSend }));
+    }
 
     try {
-      const reply = await sendProcurementMessage(id, text);
+      const reply = await sendProcurementMessage(id, text, imageToSend ?? undefined);
       setMessages(prev => [...prev, reply]);
       if (reply.messageType === 'parts_list' || conversation?.title === 'New Conversation') {
         const updated = await getConversation(id);
@@ -132,7 +196,8 @@ export default function ProcurementChatScreen() {
       }
     } catch {
       Alert.alert('Error', 'Could not send message');
-      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      if (imageToSend) setPendingImage(imageToSend);
     } finally {
       setSending(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -271,9 +336,23 @@ export default function ProcurementChatScreen() {
       );
     }
 
+    const cachedImage = imageCache[msg.id];
+
     return (
       <View key={msg.id} style={[s.bubble, isUser ? s.userBubble : s.assistantBubble]}>
-        <Text style={[s.bubbleText, isUser && s.userBubbleText]}>{msg.content}</Text>
+        {isUser && cachedImage && (
+          <Image
+            source={{ uri: `data:image/jpeg;base64,${cachedImage}` }}
+            style={s.msgImage}
+            resizeMode="cover"
+          />
+        )}
+        {isUser && !cachedImage && msg.hasImage && (
+          <View style={s.photoBadge}>
+            <Text style={s.photoBadgeText}>📷 Photo attached</Text>
+          </View>
+        )}
+        {msg.content ? <Text style={[s.bubbleText, isUser && s.userBubbleText]}>{msg.content}</Text> : null}
       </View>
     );
   };
@@ -317,23 +396,40 @@ export default function ProcurementChatScreen() {
           )}
         </ScrollView>
 
-        <View style={s.inputBar}>
-          <TextInput
-            style={s.input}
-            placeholder="Describe the repair job..."
-            value={input}
-            onChangeText={setInput}
-            multiline
-            maxLength={500}
-            editable={!sending}
-          />
-          <TouchableOpacity
-            style={[s.sendBtn, (!input.trim() || sending) && s.sendBtnOff]}
-            onPress={handleSend}
-            disabled={!input.trim() || sending}
-          >
-            <Ionicons name="send" size={20} color={input.trim() && !sending ? '#fff' : '#9ca3af'} />
-          </TouchableOpacity>
+        <View>
+          {pendingImage && (
+            <View style={s.previewStrip}>
+              <Image
+                source={{ uri: `data:image/jpeg;base64,${pendingImage}` }}
+                style={s.previewThumb}
+                resizeMode="cover"
+              />
+              <TouchableOpacity onPress={() => setPendingImage(null)} style={s.previewDismiss}>
+                <Ionicons name="close-circle" size={20} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+          )}
+          <View style={s.inputBar}>
+            <TouchableOpacity onPress={openImagePicker} style={s.cameraBtn} disabled={sending}>
+              <Ionicons name="camera-outline" size={24} color={sending ? '#d1d5db' : '#6b7280'} />
+            </TouchableOpacity>
+            <TextInput
+              style={s.input}
+              placeholder="Describe the repair job..."
+              value={input}
+              onChangeText={setInput}
+              multiline
+              maxLength={500}
+              editable={!sending}
+            />
+            <TouchableOpacity
+              style={[s.sendBtn, ((!input.trim() && !pendingImage) || sending) && s.sendBtnOff]}
+              onPress={handleSend}
+              disabled={(!input.trim() && !pendingImage) || sending}
+            >
+              <Ionicons name="send" size={20} color={(input.trim() || pendingImage) && !sending ? '#fff' : '#9ca3af'} />
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
 
@@ -428,6 +524,16 @@ const s = StyleSheet.create({
   input: { flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 12, fontSize: 15, maxHeight: 100 },
   sendBtn: { backgroundColor: '#1e40af', borderRadius: 10, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   sendBtnOff: { backgroundColor: '#f3f4f6' },
+  cameraBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  previewStrip: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e5e7eb',
+  },
+  previewThumb: { width: 80, height: 80, borderRadius: 8 },
+  previewDismiss: { marginLeft: 8 },
+  msgImage: { width: '100%', height: 200, borderRadius: 10, marginBottom: 8 },
+  photoBadge: { backgroundColor: '#f3f4f6', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 6, alignSelf: 'flex-start' },
+  photoBadgeText: { fontSize: 12, color: '#6b7280' },
   modal: { flex: 1, padding: 24, backgroundColor: '#fff' },
   modalTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
   selectedBanner: { backgroundColor: '#eff6ff', borderRadius: 10, padding: 12, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between' },
