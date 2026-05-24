@@ -58,6 +58,7 @@ export interface ProcurementMessage {
   messageType: 'text' | 'parts_list';
   content: string;
   parts: ProcurementPart[] | null;
+  hasImage?: boolean;
   createdAt: string;
 }
 

@@ -88,8 +88,15 @@ export const getConversation = async (id: string): Promise<ProcurementConversati
   const { data } = await api.get(`/procurement/${id}`);
   return data as ProcurementConversation;
 };
-export const sendProcurementMessage = async (id: string, content: string): Promise<ProcurementMessage> => {
-  const { data } = await api.post(`/procurement/${id}/messages`, { content });
+export const sendProcurementMessage = async (
+  id: string,
+  content: string,
+  imageBase64?: string,
+): Promise<ProcurementMessage> => {
+  const { data } = await api.post(`/procurement/${id}/messages`, {
+    content,
+    ...(imageBase64 ? { imageBase64 } : {}),
+  });
   return data as ProcurementMessage;
 };
 export const deleteProcurementConversation = async (id: string): Promise<void> => {
