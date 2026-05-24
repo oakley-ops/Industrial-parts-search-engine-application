@@ -100,13 +100,13 @@ export default function PartDetailScreen() {
 
   const best = prices.filter(p => p.price !== null && p.price > 0).sort((a, b) => a.price! - b.price!)[0];
 
-  const noStock = !loading && prices.length > 0 && prices.every(
-    p => p.price === null || p.price === 0 || p.source === 'BACKORDER' || !!p.error,
-  );
-
   const displayedPrices = domesticOnly
     ? prices.filter(p => isDomestic(p.vendorSlug, countryCode))
     : prices;
+
+  const noStock = !loading && displayedPrices.length > 0 && displayedPrices.every(
+    p => p.price === null || p.price === 0 || p.source === 'BACKORDER' || !!p.error,
+  );
 
   const goToCrossref = () => router.push({
     pathname: '/crossref',
@@ -187,7 +187,7 @@ export default function PartDetailScreen() {
           </View>
 
           {/* Source vendor card — from search results */}
-          {sourceResult && (
+          {sourceResult && (!domesticOnly || isDomestic(sourceResult.vendorSlug, countryCode)) && (
             <View style={[s.card, { borderColor: '#1e40af', borderWidth: 1.5 }]}>
               <View style={s.sourceTag}>
                 <Ionicons name="search" size={10} color="#fff" />
@@ -216,15 +216,16 @@ export default function PartDetailScreen() {
           {displayedPrices.map((p, i) => {
             const cfg = SOURCE[p.source] || SOURCE.UNKNOWN;
             const isBest = best?.vendorSlug === p.vendorSlug;
+            const isDom = isDomestic(p.vendorSlug, countryCode);
             return (
               <View key={i} style={[s.card, isBest && s.bestCard]}>
                 {isBest && <View style={s.bestTag}><Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>BEST PRICE</Text></View>}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                   <Text style={s.vendor}>{p.vendorName}</Text>
                   {countryCode && (
-                    <View style={[s.domesticBadge, { backgroundColor: isDomestic(p.vendorSlug, countryCode) ? '#dcfce7' : '#f3f4f6' }]}>
-                      <Text style={{ fontSize: 11, color: isDomestic(p.vendorSlug, countryCode) ? '#16a34a' : '#9ca3af' }}>
-                        {isDomestic(p.vendorSlug, countryCode) ? '🇺🇸' : '🌍'}
+                    <View style={[s.domesticBadge, { backgroundColor: isDom ? '#dcfce7' : '#f3f4f6' }]}>
+                      <Text style={{ fontSize: 11, color: isDom ? '#16a34a' : '#9ca3af' }}>
+                        {isDom ? '🇺🇸' : '🌍'}
                       </Text>
                     </View>
                   )}
@@ -284,7 +285,7 @@ export default function PartDetailScreen() {
             <View style={s.branchesCard}>
               <Text style={s.branchesSectionTitle}>Nearby Pickup</Text>
               {nearbyBranches.map((b, i) => (
-                <View key={i} style={[s.branchRow, i < nearbyBranches.length - 1 && s.branchRowBorder]}>
+                <View key={b.url} style={[s.branchRow, i < nearbyBranches.length - 1 && s.branchRowBorder]}>
                   <View style={{ flex: 1 }}>
                     <Text style={s.branchName}>📍 {b.name}</Text>
                     <Text style={s.branchSub}>{b.city}, {b.state} · {b.distance.toFixed(1)} mi</Text>
