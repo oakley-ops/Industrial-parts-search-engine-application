@@ -2,14 +2,20 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal, Image, Linking } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getPricesForPart, getQuotes, createQuote, addLineItem } from '../../services/api';
-import { PriceResult, Quote } from '../../types';
+import { getPricesForPart, getQuotes, createQuote, addLineItem, analyzePrices } from '../../services/api';
+import { PriceResult, Quote, PriceIntelResult } from '../../types';
 
 const SOURCE = {
   VENDOR_WAREHOUSE: { label: 'In Stock', color: '#16a34a', icon: '✅' },
   MANUFACTURER_ORDER: { label: 'Order Required', color: '#d97706', icon: '🔄' },
   BACKORDER: { label: 'Backorder', color: '#dc2626', icon: '⚠️' },
   UNKNOWN: { label: 'Check Vendor', color: '#6b7280', icon: '❓' },
+};
+
+const CONF_COLORS: Record<string, string> = {
+  high: '#16a34a',
+  medium: '#d97706',
+  low: '#9ca3af',
 };
 
 export default function PartDetailScreen() {
@@ -35,6 +41,8 @@ export default function PartDetailScreen() {
   const [newTitle, setNewTitle] = useState('');
   const [qty, setQty] = useState('1');
   const [saving, setSaving] = useState(false);
+  const [priceIntel, setPriceIntel] = useState<PriceIntelResult | null>(null);
+  const [analyzingPrices, setAnalyzingPrices] = useState(false);
 
   useEffect(() => { load(); }, [id]);
 
@@ -86,6 +94,21 @@ export default function PartDetailScreen() {
       partNumber: id,
     },
   });
+
+  const handleAnalyzePrices = async () => {
+    setAnalyzingPrices(true);
+    try {
+      const validPrices = prices
+        .filter(p => p.price !== null)
+        .map(p => ({ vendorName: p.vendorName, price: p.price!, source: p.source }));
+      const result = await analyzePrices(id, undefined, validPrices);
+      setPriceIntel(result);
+    } catch {
+      Alert.alert('Error', 'Could not analyze prices');
+    } finally {
+      setAnalyzingPrices(false);
+    }
+  };
 
   return (
     <View style={s.container}>
@@ -215,6 +238,34 @@ export default function PartDetailScreen() {
               </TouchableOpacity>
             </View>
           )}
+          {!loading && prices.some(p => p.price !== null) && (
+            priceIntel ? (
+              <View style={s.priceIntelCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <View style={[s.confDot, { backgroundColor: CONF_COLORS[priceIntel.confidence] }]} />
+                  <Text style={s.priceIntelTitle}>Price Analysis</Text>
+                  <Text style={s.confLabel}>
+                    {priceIntel.confidence.charAt(0).toUpperCase() + priceIntel.confidence.slice(1)} conf
+                  </Text>
+                </View>
+                <Text style={s.priceIntelText}>{priceIntel.recommendation}</Text>
+              </View>
+            ) : (
+              <TouchableOpacity style={s.analyzeBtn} onPress={handleAnalyzePrices} disabled={analyzingPrices}>
+                {analyzingPrices ? (
+                  <>
+                    <ActivityIndicator size="small" color="#1e40af" />
+                    <Text style={s.analyzeBtnText}>Analyzing prices...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="bulb-outline" size={18} color="#1e40af" />
+                    <Text style={s.analyzeBtnText}>Analyze Prices</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )
+          )}
         </ScrollView>
       )}
 
@@ -296,4 +347,18 @@ const s = StyleSheet.create({
     gap: 8, backgroundColor: '#d97706', borderRadius: 8, padding: 12,
   },
   crossrefBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  priceIntelCard: {
+    backgroundColor: '#eff6ff', borderRadius: 12, padding: 16,
+    marginBottom: 12, borderWidth: 1, borderColor: '#bfdbfe',
+  },
+  priceIntelTitle: { fontSize: 14, fontWeight: '700', color: '#1e40af', flex: 1 },
+  priceIntelText: { fontSize: 14, color: '#1e3a8a', lineHeight: 22 },
+  confDot: { width: 10, height: 10, borderRadius: 5 },
+  confLabel: { fontSize: 12, color: '#6b7280', fontWeight: '600' },
+  analyzeBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, borderWidth: 1.5, borderColor: '#1e40af', borderRadius: 10,
+    padding: 14, marginBottom: 12, backgroundColor: '#fff',
+  },
+  analyzeBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 15 },
 });
