@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { searchParts } from '../../services/api';
 import { SearchResult } from '../../types';
+import { getCountryCode, isDomestic } from '../../services/location';
 
 export default function SearchScreen() {
   const params = useLocalSearchParams<{ query?: string }>();
@@ -12,6 +13,8 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [findEquivalent, setFindEquivalent] = useState(false);
+  const [countryCode, setCountryCode] = useState<string | null>(null);
+  const [domesticOnly, setDomesticOnly] = useState(false);
 
   useEffect(() => {
     if (params.query) {
@@ -19,6 +22,10 @@ export default function SearchScreen() {
       triggerSearch(params.query);
     }
   }, [params.query]);
+
+  useEffect(() => {
+    setCountryCode(getCountryCode());
+  }, []);
 
   const triggerSearch = async (q: string) => {
     if (!q.trim()) return;
@@ -55,7 +62,14 @@ export default function SearchScreen() {
       },
     })}>
       <View style={s.cardTop}>
-        <View style={s.badge}><Text style={s.badgeText}>{item.vendorName}</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <View style={s.badge}><Text style={s.badgeText}>{item.vendorName}</Text></View>
+          {countryCode && (
+            <Text style={{ fontSize: 11 }}>
+              {isDomestic(item.vendorSlug, countryCode) ? '🇺🇸' : '🌍'}
+            </Text>
+          )}
+        </View>
         <View style={[s.stockBadge, { backgroundColor: item.inStock ? '#dcfce7' : '#fef3c7' }]}>
           <Text style={{ color: item.inStock ? '#16a34a' : '#d97706', fontSize: 11, fontWeight: '600' }}>
             {item.inStock ? 'In Stock' : 'Check Availability'}
@@ -104,6 +118,14 @@ export default function SearchScreen() {
         {['Grainger', 'Motion', 'McMaster'].map(v => (
           <View key={v} style={s.chip}><Text style={s.chipText}>{v}</Text></View>
         ))}
+        {countryCode && (
+          <TouchableOpacity
+            style={[s.chip, domesticOnly && s.chipActive]}
+            onPress={() => setDomesticOnly(v => !v)}
+          >
+            <Text style={[s.chipText, domesticOnly && s.chipTextActive]}>🇺🇸 Domestic</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={[s.chip, findEquivalent && s.chipActive]}
           onPress={() => setFindEquivalent(v => !v)}
@@ -146,7 +168,7 @@ export default function SearchScreen() {
       )}
 
       {!loading && results.length > 0 && (
-        <FlatList data={results} keyExtractor={(item, i) => `${item.vendorSlug}-${i}`}
+        <FlatList data={domesticOnly ? results.filter(r => isDomestic(r.vendorSlug, countryCode)) : results} keyExtractor={(item, i) => `${item.vendorSlug}-${i}`}
           renderItem={renderItem} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false} />
       )}
     </View>
