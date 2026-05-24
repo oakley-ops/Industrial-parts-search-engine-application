@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Image } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Image, ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { searchParts } from '../../services/api';
 import { SearchResult } from '../../types';
 import { getCountryCode, isDomestic } from '../../services/location';
+import { ACTIVE_VENDORS } from '../../utils/searchConfig';
+import { getSearchHistory, addToSearchHistory, clearSearchHistory } from '../../utils/searchHistory';
 
 export default function SearchScreen() {
   const params = useLocalSearchParams<{ query?: string }>();
@@ -15,6 +17,12 @@ export default function SearchScreen() {
   const [findEquivalent, setFindEquivalent] = useState(false);
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [domesticOnly, setDomesticOnly] = useState(false);
+  const [activeVendors, setActiveVendors] = useState<Set<string>>(
+    () => new Set(ACTIVE_VENDORS.map(v => v.slug))
+  );
+  const [inStockFirst, setInStockFirst] = useState(true);
+  const [priceSort, setPriceSort] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
   useEffect(() => {
     if (params.query) {
@@ -27,12 +35,25 @@ export default function SearchScreen() {
     setCountryCode(getCountryCode());
   }, []);
 
+  useEffect(() => {
+    getSearchHistory().then(setSearchHistory);
+  }, []);
+
   const triggerSearch = async (q: string) => {
     if (!q.trim()) return;
-    setLoading(true); setSearched(true);
-    try { setResults(await searchParts(q.trim())); }
-    catch (err) { console.error(err); }
-    finally { setLoading(false); }
+    setLoading(true);
+    setSearched(true);
+    setInStockFirst(true);
+    try {
+      const data = await searchParts(q.trim());
+      setResults(data);
+      await addToSearchHistory(q.trim());
+      setSearchHistory(await getSearchHistory());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const doSearch = async () => {
@@ -96,6 +117,23 @@ export default function SearchScreen() {
     </TouchableOpacity>
   );
 
+  const sortedResults = [...results].sort((a, b) => {
+    if (inStockFirst && a.inStock !== b.inStock) return a.inStock ? -1 : 1;
+    if (priceSort) {
+      if (a.price === null && b.price === null) return 0;
+      if (a.price === null) return 1;
+      if (b.price === null) return -1;
+      return a.price - b.price;
+    }
+    return 0;
+  });
+
+  const displayedResults = sortedResults.filter(r => {
+    if (!activeVendors.has(r.vendorSlug)) return false;
+    if (domesticOnly && countryCode && !isDomestic(r.vendorSlug, countryCode)) return false;
+    return true;
+  });
+
   return (
     <View style={s.container}>
       <View style={s.searchRow}>
@@ -114,9 +152,26 @@ export default function SearchScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={s.chips}>
-        {['Grainger', 'Motion', 'McMaster'].map(v => (
-          <View key={v} style={s.chip}><Text style={s.chipText}>{v}</Text></View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={s.chipsScroll}
+        contentContainerStyle={s.chips}
+      >
+        {ACTIVE_VENDORS.map(v => (
+          <TouchableOpacity
+            key={v.slug}
+            style={[s.chip, activeVendors.has(v.slug) && s.chipActive]}
+            onPress={() => setActiveVendors(prev => {
+              const next = new Set(prev);
+              next.has(v.slug) ? next.delete(v.slug) : next.add(v.slug);
+              return next;
+            })}
+          >
+            <Text style={[s.chipText, activeVendors.has(v.slug) && s.chipTextActive]}>
+              {v.name}
+            </Text>
+          </TouchableOpacity>
         ))}
         {countryCode && (
           <TouchableOpacity
@@ -127,16 +182,33 @@ export default function SearchScreen() {
           </TouchableOpacity>
         )}
         <TouchableOpacity
+          style={[s.chip, inStockFirst && s.chipActive]}
+          onPress={() => setInStockFirst(v => !v)}
+        >
+          <Text style={[s.chipText, inStockFirst && s.chipTextActive]}>In Stock First</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.chip, priceSort && s.chipActive]}
+          onPress={() => setPriceSort(v => !v)}
+        >
+          <Text style={[s.chipText, priceSort && s.chipTextActive]}>Price ↑</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[s.chip, findEquivalent && s.chipActive]}
           onPress={() => setFindEquivalent(v => !v)}
         >
           <Text style={[s.chipText, findEquivalent && s.chipTextActive]}>🔄 Find Equivalent</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
 
-      {loading && <View style={s.center}><ActivityIndicator size="large" color="#1e40af" /><Text style={s.loadingText}>Searching all 3 vendors...</Text></View>}
+      {loading && (
+        <View style={s.center}>
+          <ActivityIndicator size="large" color="#1e40af" />
+          <Text style={s.loadingText}>Searching all vendors...</Text>
+        </View>
+      )}
 
-      {!loading && searched && results.length === 0 && (
+      {!loading && searched && displayedResults.length === 0 && (
         <View style={s.center}>
           <Text style={{ fontSize: 48 }}>🔍</Text>
           <Text style={s.emptyTitle}>No results found</Text>
@@ -160,16 +232,42 @@ export default function SearchScreen() {
       )}
 
       {!loading && !searched && (
-        <View style={s.center}>
-          <Text style={{ fontSize: 72, marginBottom: 16 }}>⚙️</Text>
-          <Text style={s.heroTitle}>Search Industrial Parts</Text>
-          <Text style={s.heroSub}>Compare real-time pricing across Grainger, Motion Industries, and McMaster-Carr</Text>
-        </View>
+        searchHistory.length > 0 ? (
+          <View style={s.historyContainer}>
+            <View style={s.historyHeader}>
+              <Text style={s.historyTitle}>Recent Searches</Text>
+              <TouchableOpacity onPress={() => { clearSearchHistory(); setSearchHistory([]); }}>
+                <Text style={s.historyClear}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+            {searchHistory.map((item, i) => (
+              <TouchableOpacity
+                key={i}
+                style={s.historyRow}
+                onPress={() => { setQuery(item); triggerSearch(item); }}
+              >
+                <Ionicons name="time-outline" size={16} color="#9ca3af" />
+                <Text style={s.historyItem}>{item}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View style={s.center}>
+            <Text style={{ fontSize: 72, marginBottom: 16 }}>⚙️</Text>
+            <Text style={s.heroTitle}>Search Industrial Parts</Text>
+            <Text style={s.heroSub}>Compare real-time pricing across vendors</Text>
+          </View>
+        )
       )}
 
-      {!loading && results.length > 0 && (
-        <FlatList data={domesticOnly && countryCode ? results.filter(r => isDomestic(r.vendorSlug, countryCode)) : results} keyExtractor={(item, i) => `${item.vendorSlug}-${i}`}
-          renderItem={renderItem} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false} />
+      {!loading && displayedResults.length > 0 && (
+        <FlatList
+          data={displayedResults}
+          keyExtractor={(item, i) => `${item.vendorSlug}-${i}`}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 16 }}
+          showsVerticalScrollIndicator={false}
+        />
       )}
     </View>
   );
@@ -183,11 +281,18 @@ const s = StyleSheet.create({
   searchBtn: { backgroundColor: '#f59e0b', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
   searchBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   cameraBtn: { backgroundColor: '#1e3a8a', borderRadius: 10, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  chips: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, gap: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+  chips: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#eff6ff', borderRadius: 20, borderWidth: 1, borderColor: '#bfdbfe' },
   chipText: { color: '#1e40af', fontSize: 12, fontWeight: '600' },
   chipActive: { backgroundColor: '#1e40af', borderColor: '#1e40af' },
   chipTextActive: { color: '#fff' },
+  chipsScroll: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb', maxHeight: 52 },
+  historyContainer: { padding: 16 },
+  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  historyTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  historyClear: { fontSize: 13, color: '#6b7280', fontWeight: '600' },
+  historyRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  historyItem: { fontSize: 15, color: '#374151' },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   cardBody: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
