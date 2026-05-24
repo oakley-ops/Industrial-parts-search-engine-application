@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal, Image, Linking } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,12 +43,14 @@ export default function PartDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [priceIntel, setPriceIntel] = useState<PriceIntelResult | null>(null);
   const [analyzingPrices, setAnalyzingPrices] = useState(false);
+  const analyzeGenRef = useRef(0);
 
   useEffect(() => { load(); }, [id]);
 
   const load = async () => {
     setLoading(true);
     setPriceIntel(null);
+    analyzeGenRef.current += 1;
     try { setPrices(await getPricesForPart(id)); }
     catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -98,12 +100,15 @@ export default function PartDetailScreen() {
 
   const handleAnalyzePrices = async () => {
     setAnalyzingPrices(true);
+    const gen = analyzeGenRef.current;
     try {
       const validPrices = prices
         .filter(p => p.price !== null)
         .map(p => ({ vendorName: p.vendorName, price: p.price!, source: p.source }));
       const result = await analyzePrices(id, undefined, validPrices);
-      setPriceIntel(result);
+      if (gen === analyzeGenRef.current) {
+        setPriceIntel(result);
+      }
     } catch {
       Alert.alert('Error', 'Could not analyze prices');
     } finally {
@@ -243,7 +248,7 @@ export default function PartDetailScreen() {
             priceIntel ? (
               <View style={s.priceIntelCard}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                  <View style={[s.confDot, { backgroundColor: CONF_COLORS[priceIntel.confidence] }]} />
+                  <View style={[s.confDot, { backgroundColor: CONF_COLORS[priceIntel.confidence] ?? CONF_COLORS.low }]} />
                   <Text style={s.priceIntelTitle}>Price Analysis</Text>
                   <Text style={s.confLabel}>
                     {priceIntel.confidence.charAt(0).toUpperCase() + priceIntel.confidence.slice(1)} conf
