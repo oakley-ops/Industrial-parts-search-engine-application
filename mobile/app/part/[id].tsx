@@ -48,6 +48,7 @@ export default function PartDetailScreen() {
 
   const load = async () => {
     setLoading(true);
+    setPriceIntel(null);
     try { setPrices(await getPricesForPart(id)); }
     catch (err) { console.error(err); }
     finally { setLoading(false); }
