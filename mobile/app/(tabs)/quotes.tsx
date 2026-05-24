@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getQuotes, createQuote, deleteQuote } from '../../services/api';
 import { Quote } from '../../types';
@@ -52,9 +52,14 @@ export default function QuotesScreen() {
                 <View style={s.card}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                     <Text style={s.cardTitle}>{item.title}</Text>
-                    <TouchableOpacity onPress={() => handleDelete(item.id, item.title)}>
-                      <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                      <TouchableOpacity onPress={() => router.push(`/quote-export/${item.id}`)}>
+                        <Ionicons name="share-outline" size={18} color="#1e40af" />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDelete(item.id, item.title)}>
+                        <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text style={s.cardMeta}>{item.lineItems?.length || 0} items · {new Date(item.createdAt).toLocaleDateString()}</Text>
