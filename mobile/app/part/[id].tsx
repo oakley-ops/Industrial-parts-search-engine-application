@@ -3,7 +3,10 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getPricesForPart, getQuotes, createQuote, addLineItem, analyzePrices } from '../../services/api';
-import { PriceResult, Quote, PriceIntelResult } from '../../types';
+import { PriceResult, Quote, PriceIntelResult, Branch, NearbyBranch } from '../../types';
+import { getCountryCode, getCoords, isDomestic } from '../../services/location';
+import { nearestBranches } from '../../utils/geo';
+import branches from '../../assets/branches.json';
 
 const SOURCE = {
   VENDOR_WAREHOUSE: { label: 'In Stock', color: '#16a34a', icon: '✅' },
@@ -44,8 +47,18 @@ export default function PartDetailScreen() {
   const [priceIntel, setPriceIntel] = useState<PriceIntelResult | null>(null);
   const [analyzingPrices, setAnalyzingPrices] = useState(false);
   const analyzeGenRef = useRef(0);
+  const [countryCode, setCountryCode] = useState<string | null>(null);
+  const [domesticOnly, setDomesticOnly] = useState(false);
+  const [nearbyBranches, setNearbyBranches] = useState<NearbyBranch[]>([]);
 
   useEffect(() => { load(); }, [id]);
+
+  useEffect(() => {
+    setCountryCode(getCountryCode());
+    getCoords().then(c => {
+      if (c) setNearbyBranches(nearestBranches(c, branches as Branch[], 50, 3));
+    });
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -90,6 +103,10 @@ export default function PartDetailScreen() {
   const noStock = !loading && prices.length > 0 && prices.every(
     p => p.price === null || p.price === 0 || p.source === 'BACKORDER' || !!p.error,
   );
+
+  const displayedPrices = domesticOnly
+    ? prices.filter(p => isDomestic(p.vendorSlug, countryCode))
+    : prices;
 
   const goToCrossref = () => router.push({
     pathname: '/crossref',
@@ -155,7 +172,19 @@ export default function PartDetailScreen() {
             </View>
           )}
 
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 12 }}>All Vendor Prices</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>All Vendor Prices</Text>
+            {countryCode && (
+              <TouchableOpacity
+                style={[s.domesticChip, domesticOnly && s.domesticChipActive]}
+                onPress={() => setDomesticOnly(v => !v)}
+              >
+                <Text style={[s.domesticChipText, domesticOnly && s.domesticChipTextActive]}>
+                  🇺🇸 Domestic only
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           {/* Source vendor card — from search results */}
           {sourceResult && (
@@ -184,7 +213,7 @@ export default function PartDetailScreen() {
             </View>
           )}
 
-          {prices.map((p, i) => {
+          {displayedPrices.map((p, i) => {
             const cfg = SOURCE[p.source] || SOURCE.UNKNOWN;
             const isBest = best?.vendorSlug === p.vendorSlug;
             return (
@@ -192,6 +221,13 @@ export default function PartDetailScreen() {
                 {isBest && <View style={s.bestTag}><Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>BEST PRICE</Text></View>}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                   <Text style={s.vendor}>{p.vendorName}</Text>
+                  {countryCode && (
+                    <View style={[s.domesticBadge, { backgroundColor: isDomestic(p.vendorSlug, countryCode) ? '#dcfce7' : '#f3f4f6' }]}>
+                      <Text style={{ fontSize: 11, color: isDomestic(p.vendorSlug, countryCode) ? '#16a34a' : '#9ca3af' }}>
+                        {isDomestic(p.vendorSlug, countryCode) ? '🇺🇸' : '🌍'}
+                      </Text>
+                    </View>
+                  )}
                   <View style={[s.sourceBadge, { backgroundColor: cfg.color + '20' }]}>
                     <Text style={{ color: cfg.color, fontSize: 12, fontWeight: '600' }}>{cfg.icon} {cfg.label}</Text>
                   </View>
@@ -242,6 +278,22 @@ export default function PartDetailScreen() {
                 <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
                 <Text style={s.crossrefBtnText}>Find Equivalent Parts</Text>
               </TouchableOpacity>
+            </View>
+          )}
+          {nearbyBranches.length > 0 && (
+            <View style={s.branchesCard}>
+              <Text style={s.branchesSectionTitle}>Nearby Pickup</Text>
+              {nearbyBranches.map((b, i) => (
+                <View key={i} style={[s.branchRow, i < nearbyBranches.length - 1 && s.branchRowBorder]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.branchName}>📍 {b.name}</Text>
+                    <Text style={s.branchSub}>{b.city}, {b.state} · {b.distance.toFixed(1)} mi</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => Linking.openURL(b.url)}>
+                    <Text style={s.branchLink}>View Branch →</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
             </View>
           )}
           {!loading && prices.some(p => p.price !== null && p.price > 0) && (
@@ -367,4 +419,16 @@ const s = StyleSheet.create({
     padding: 14, marginBottom: 12, backgroundColor: '#fff',
   },
   analyzeBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 15 },
+  domesticBadge: { borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2, marginLeft: 6, justifyContent: 'center' },
+  domesticChip: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#fff' },
+  domesticChipActive: { borderColor: '#1e40af', backgroundColor: '#eff6ff' },
+  domesticChipText: { fontSize: 12, color: '#6b7280', fontWeight: '600' },
+  domesticChipTextActive: { color: '#1e40af' },
+  branchesCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6', elevation: 2 },
+  branchesSectionTitle: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 10 },
+  branchRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  branchRowBorder: { borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  branchName: { fontSize: 13, fontWeight: '600', color: '#111827' },
+  branchSub: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  branchLink: { fontSize: 13, color: '#1e40af', fontWeight: '600' },
 });
