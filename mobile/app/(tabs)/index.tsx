@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { searchParts } from '../../services/api';
 import { SearchResult } from '../../types';
 import { getCountryCode, isDomestic } from '../../services/location';
+import { theme } from '../../constants/theme';
 
 export default function SearchScreen() {
   const params = useLocalSearchParams<{ query?: string }>();
@@ -70,8 +71,11 @@ export default function SearchScreen() {
             </Text>
           )}
         </View>
-        <View style={[s.stockBadge, { backgroundColor: item.inStock ? '#dcfce7' : '#fef3c7' }]}>
-          <Text style={{ color: item.inStock ? '#16a34a' : '#d97706', fontSize: 11, fontWeight: '600' }}>
+        <View style={[
+          s.stockBadge,
+          { backgroundColor: item.inStock ? theme.colors.successSubtle : theme.colors.warningSubtle },
+        ]}>
+          <Text style={{ color: item.inStock ? theme.colors.success : theme.colors.warning, fontSize: 11, fontWeight: '600' }}>
             {item.inStock ? 'In Stock' : 'Check Availability'}
           </Text>
         </View>
@@ -80,7 +84,7 @@ export default function SearchScreen() {
         {item.imageUrl ? (
           <Image source={{ uri: item.imageUrl }} style={s.thumb} resizeMode="contain" />
         ) : (
-          <View style={s.thumbPlaceholder}><Ionicons name="cube-outline" size={28} color="#d1d5db" /></View>
+          <View style={s.thumbPlaceholder}><Ionicons name="cube-outline" size={28} color={theme.colors.textDisabled} /></View>
         )}
         <View style={{ flex: 1 }}>
           <Text style={s.name} numberOfLines={2}>{item.name}</Text>
@@ -89,7 +93,7 @@ export default function SearchScreen() {
             {item.price !== null
               ? <Text style={s.price}>${item.price.toFixed(2)}</Text>
               : <Text style={s.noPrice}>Price on request</Text>}
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
           </View>
         </View>
       </View>
@@ -100,17 +104,31 @@ export default function SearchScreen() {
     <View style={s.container}>
       <View style={s.searchRow}>
         <View style={s.searchBox}>
-          <Ionicons name="search" size={20} color="#6b7280" style={{ marginRight: 8 }} />
-          <TextInput style={s.searchInput} placeholder="Part number, name, keyword..." value={query}
-            onChangeText={setQuery} onSubmitEditing={doSearch} returnKeyType="search" autoCapitalize="none" autoCorrect={false} />
-          {query.length > 0 && <TouchableOpacity onPress={() => { setQuery(''); setResults([]); setSearched(false); }}>
-            <Ionicons name="close-circle" size={20} color="#9ca3af" /></TouchableOpacity>}
+          <Ionicons name="search" size={20} color={theme.colors.textMuted} style={{ marginRight: 8 }} />
+          <TextInput
+            style={s.searchInput}
+            placeholder="Part number, name, keyword..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={doSearch}
+            returnKeyType="search"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => { setQuery(''); setResults([]); setSearched(false); }}>
+              <Ionicons name="close-circle" size={20} color={theme.colors.textMuted} />
+            </TouchableOpacity>
+          )}
         </View>
         <TouchableOpacity style={s.searchBtn} onPress={doSearch} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.searchBtnText}>Search</Text>}
+          {loading
+            ? <ActivityIndicator color={theme.colors.white} size="small" />
+            : <Text style={s.searchBtnText}>Search</Text>}
         </TouchableOpacity>
         <TouchableOpacity style={s.cameraBtn} onPress={() => router.push('/camera')}>
-          <Ionicons name="camera" size={22} color="#fff" />
+          <Ionicons name="camera" size={22} color={theme.colors.white} />
         </TouchableOpacity>
       </View>
 
@@ -134,7 +152,12 @@ export default function SearchScreen() {
         </TouchableOpacity>
       </View>
 
-      {loading && <View style={s.center}><ActivityIndicator size="large" color="#1e40af" /><Text style={s.loadingText}>Searching all 3 vendors...</Text></View>}
+      {loading && (
+        <View style={s.center}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={s.loadingText}>Searching all 3 vendors...</Text>
+        </View>
+      )}
 
       {!loading && searched && results.length === 0 && (
         <View style={s.center}>
@@ -150,7 +173,7 @@ export default function SearchScreen() {
                 triggerSearch(shorter);
               }}
             >
-              <Ionicons name="search-outline" size={16} color="#1e40af" />
+              <Ionicons name="search-outline" size={16} color={theme.colors.secondary} />
               <Text style={s.broaderBtnText}>
                 Try "{query.trim().split(' ').slice(0, 2).join(' ')}"
               </Text>
@@ -168,47 +191,151 @@ export default function SearchScreen() {
       )}
 
       {!loading && results.length > 0 && (
-        <FlatList data={domesticOnly && countryCode ? results.filter(r => isDomestic(r.vendorSlug, countryCode)) : results} keyExtractor={(item, i) => `${item.vendorSlug}-${i}`}
-          renderItem={renderItem} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false} />
+        <FlatList
+          data={domesticOnly && countryCode ? results.filter(r => isDomestic(r.vendorSlug, countryCode)) : results}
+          keyExtractor={(item, i) => `${item.vendorSlug}-${i}`}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 16 }}
+          showsVerticalScrollIndicator={false}
+        />
       )}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  searchRow: { flexDirection: 'row', padding: 16, backgroundColor: '#1e40af', gap: 10 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 12 },
-  searchInput: { flex: 1, height: 44, fontSize: 15 },
-  searchBtn: { backgroundColor: '#f59e0b', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
-  searchBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  cameraBtn: { backgroundColor: '#1e3a8a', borderRadius: 10, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  chips: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, gap: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  chip: { paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#eff6ff', borderRadius: 20, borderWidth: 1, borderColor: '#bfdbfe' },
-  chipText: { color: '#1e40af', fontSize: 12, fontWeight: '600' },
-  chipActive: { backgroundColor: '#1e40af', borderColor: '#1e40af' },
-  chipTextActive: { color: '#fff' },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06 },
+  container: { flex: 1, backgroundColor: theme.colors.background },
+
+  // ── Search bar ──────────────────────────────────────────────
+  searchRow: {
+    flexDirection: 'row',
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.surface,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surfaceElevated,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 12,
+  },
+  searchInput: { flex: 1, height: 44, fontSize: 15, color: theme.colors.textPrimary },
+  searchBtn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+  },
+  searchBtnText: { color: theme.colors.white, fontWeight: '700', fontSize: 14 },
+  cameraBtn: {
+    backgroundColor: theme.colors.surfaceElevated,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ── Chips / filters ──────────────────────────────────────────
+  chips: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: 10,
+    gap: 8,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    flexWrap: 'wrap',
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: theme.colors.surfaceElevated,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  chipText: { color: theme.colors.textSecondary, fontSize: 12, fontWeight: '600' },
+  chipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  chipTextActive: { color: theme.colors.white },
+
+  // ── Result cards ─────────────────────────────────────────────
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   cardBody: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  thumb: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: '#f3f4f6', backgroundColor: '#fafafa' },
-  thumbPlaceholder: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: '#f3f4f6', backgroundColor: '#fafafa', justifyContent: 'center', alignItems: 'center' },
-  badge: { backgroundColor: '#1e40af', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  thumb: {
+    width: 64, height: 64,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceElevated,
+  },
+  thumbPlaceholder: {
+    width: 64, height: 64,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceElevated,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badge: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: { color: theme.colors.white, fontSize: 11, fontWeight: '700' },
   vendorBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
   flagEmoji: { fontSize: 14 },
-  stockBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  name: { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 4 },
-  sku: { fontSize: 12, color: '#6b7280', marginBottom: 8 },
+  stockBadge: { borderRadius: theme.radius.sm, paddingHorizontal: 8, paddingVertical: 3 },
+
+  name: { fontSize: 15, fontWeight: '600', color: theme.colors.textPrimary, marginBottom: 4 },
+  sku: { fontSize: 12, color: theme.colors.textMuted, marginBottom: 8 },
   cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  price: { fontSize: 20, fontWeight: '800', color: '#1e40af' },
-  noPrice: { fontSize: 14, color: '#9ca3af', fontStyle: 'italic' },
+  price: { fontSize: 20, fontWeight: '800', color: theme.colors.primary },
+  noPrice: { fontSize: 14, color: theme.colors.textMuted, fontStyle: 'italic' },
+
+  // ── Empty / hero states ───────────────────────────────────────
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 12 },
-  loadingText: { color: '#6b7280', fontSize: 14 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  emptySub: { fontSize: 14, color: '#6b7280', textAlign: 'center' },
-  broaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: '#eff6ff', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#bfdbfe' },
-  broaderBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 14 },
-  heroTitle: { fontSize: 22, fontWeight: '800', color: '#111827', textAlign: 'center', marginBottom: 8 },
-  heroSub: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 22 },
+  loadingText: { color: theme.colors.textSecondary, fontSize: 14 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: theme.colors.textPrimary },
+  emptySub: { fontSize: 14, color: theme.colors.textMuted, textAlign: 'center' },
+  broaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    backgroundColor: theme.colors.secondarySubtle,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+  },
+  broaderBtnText: { color: theme.colors.secondary, fontWeight: '600', fontSize: 14 },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: theme.colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  heroSub: { fontSize: 14, color: theme.colors.textSecondary, textAlign: 'center', lineHeight: 22 },
 });
