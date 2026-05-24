@@ -37,7 +37,8 @@ RULES:
 - Suggest real parts from real manufacturers
 - If unsure of exact part number, use best searchable identifier (e.g. "Grundfos CM5 impeller kit")
 - Maximum 8 parts per list
-- Always respond with valid JSON only — no markdown, no explanation outside the JSON`;
+- Always respond with valid JSON only — no markdown, no explanation outside the JSON
+- When the user shares an image (photo of a part, label, or equipment), analyze it and respond with the text JSON format above describing what you can see and asking any clarifying questions needed`;
 
 @Injectable()
 export class ProcurementService {
@@ -126,8 +127,10 @@ export class ProcurementService {
       if (!block || block.type !== 'text') throw new Error('Unexpected content block type');
       const raw = block.text.trim();
       const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error('No JSON object in Claude response');
-      const parsed = JSON.parse(match[0]);
+      // If Claude didn't return JSON (e.g. vision response broke the constraint), wrap it as a text reply
+      const parsed = match
+        ? JSON.parse(match[0])
+        : { type: 'text', title: null, content: raw };
 
       if (parsed.title && conversation.title === 'New Conversation') {
         await this.convRepo.update(conversationId, { title: parsed.title });
