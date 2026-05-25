@@ -31,4 +31,8 @@ describe('DigiKeyService.scoreRelevance', () => {
   it('returns 3 when all three words match', () => {
     expect((service as any).scoreRelevance('raspberry pi 5', 'Raspberry Pi 5 Board')).toBe(3);
   });
+
+  it('does not match partial word substrings', () => {
+    expect((service as any).scoreRelevance('pi', 'Spinning Resistor')).toBe(0);
+  });
 });

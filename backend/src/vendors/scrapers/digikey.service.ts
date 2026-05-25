@@ -94,9 +94,9 @@ export class DigiKeyService {
   }
 
   private scoreRelevance(query: string, name: string): number {
-    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-    const lname = name.toLowerCase();
-    return words.filter(w => lname.includes(w)).length;
+    const queryWords = query.toLowerCase().split(/\W+/).filter(Boolean);
+    const nameWords = new Set(name.toLowerCase().split(/\W+/).filter(Boolean));
+    return queryWords.filter(w => nameWords.has(w)).length;
   }
 
   async search(query: string): Promise<SearchResult[]> {
