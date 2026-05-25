@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal } from 'react-native';
 import { useFocusEffect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getQuotes, createQuote, deleteQuote } from '../../services/api';
+import { getQuotes, createQuote, deleteQuote, duplicateQuote } from '../../services/api';
 import { Quote } from '../../types';
 import { THEME } from '../../constants/theme';
 
@@ -49,28 +49,46 @@ export default function QuotesScreen() {
           ? <View style={s.empty}><Text style={{ fontSize: 64 }}>📋</Text><Text style={s.emptyTitle}>No quotes yet</Text><Text style={s.emptySub}>Create a quote and add parts from search</Text></View>
           : <FlatList data={quotes} keyExtractor={q => q.id} onRefresh={load} refreshing={loading}
               contentContainerStyle={{ padding: 16 }}
-              renderItem={({ item }) => (
-                <View style={s.card}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text style={s.cardTitle}>{item.title}</Text>
-                    <View style={{ flexDirection: 'row', gap: 12 }}>
-                      <TouchableOpacity onPress={() => router.push(`/quote-export/${item.id}`)}>
-                        <Ionicons name="share-outline" size={18} color={THEME.colors.accent} />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleDelete(item.id, item.title)}>
-                        <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                      </TouchableOpacity>
+              renderItem={({ item }) => {
+                const statusColors: Record<string, { bg: string; text: string }> = {
+                  draft:    { bg: THEME.colors.warningSubtle,  text: THEME.colors.warning },
+                  sent:     { bg: '#1e3a5f',                   text: '#60a5fa' },
+                  accepted: { bg: THEME.colors.successSubtle,  text: THEME.colors.success },
+                  rejected: { bg: THEME.colors.dangerSubtle,   text: THEME.colors.danger },
+                };
+                const sc = statusColors[item.status] || statusColors.draft;
+                return (
+                  <TouchableOpacity style={s.card} onPress={() => router.push(`/quote/${item.id}`)}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <Text style={s.cardTitle}>{item.title}</Text>
+                      <View style={{ flexDirection: 'row', gap: 14 }}>
+                        <TouchableOpacity onPress={async () => {
+                          const copy = await duplicateQuote(item.id);
+                          Alert.alert('Duplicated', `"${copy.title}" created.`, [
+                            { text: 'Open', onPress: () => router.push(`/quote/${copy.id}`) },
+                            { text: 'OK', style: 'cancel' },
+                          ]);
+                          load();
+                        }}>
+                          <Ionicons name="copy-outline" size={18} color={THEME.colors.textSecondary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleDelete(item.id, item.title)}>
+                          <Ionicons name="trash-outline" size={18} color={THEME.colors.danger} />
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={s.cardMeta}>{item.lineItems?.length || 0} items · {new Date(item.createdAt).toLocaleDateString()}</Text>
-                    <Text style={s.cardTotal}>${getTotal(item).toFixed(2)}</Text>
-                  </View>
-                  <View style={[s.statusTag, { backgroundColor: item.status === 'draft' ? THEME.colors.warningSubtle : THEME.colors.successSubtle }]}>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: item.status === 'draft' ? THEME.colors.warning : THEME.colors.success }}>{item.status.toUpperCase()}</Text>
-                  </View>
-                </View>
-              )}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                      <View>
+                        <Text style={s.cardMeta}>{item.lineItems?.length || 0} items · {new Date(item.createdAt).toLocaleDateString()}</Text>
+                        <View style={[s.statusTag, { backgroundColor: sc.bg, marginTop: 6 }]}>
+                          <Text style={{ fontSize: 10, fontWeight: '800', color: sc.text, letterSpacing: 0.5 }}>{item.status.toUpperCase()}</Text>
+                        </View>
+                      </View>
+                      <Text style={s.cardTotal}>${getTotal(item).toFixed(2)}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
             />
       }
 

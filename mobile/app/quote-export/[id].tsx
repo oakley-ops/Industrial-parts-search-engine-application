@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { WebView } from 'react-native-webview';
-import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { getQuote } from '../../services/api';
+import { getQuote, getQuotePdfUri } from '../../services/api';
 import { Quote } from '../../types';
 import { buildQuoteHtml } from '../../utils/quoteHtml';
 import { THEME } from '../../constants/theme';
@@ -34,7 +33,7 @@ export default function QuoteExportScreen() {
     if (!quote) return;
     setSharing(true);
     try {
-      const { uri } = await Print.printToFileAsync({ html: buildQuoteHtml(quote) });
+      const uri = await getQuotePdfUri(quote.id);
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
         dialogTitle: quote.title,

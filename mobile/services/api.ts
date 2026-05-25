@@ -50,6 +50,29 @@ export const removeLineItem = async (quoteId: string, itemId: string) => {
   const { data } = await api.delete(`/quotes/${quoteId}/items/${itemId}`); return data;
 };
 export const deleteQuote = async (id: string) => { const { data } = await api.delete(`/quotes/${id}`); return data; };
+export const updateQuote = async (id: string, patch: { title?: string; notes?: string }) => {
+  const { data } = await api.patch(`/quotes/${id}`, patch); return data;
+};
+export const updateQuoteStatus = async (id: string, status: string) => {
+  const { data } = await api.patch(`/quotes/${id}/status`, { status }); return data;
+};
+export const duplicateQuote = async (id: string) => {
+  const { data } = await api.post(`/quotes/${id}/duplicate`); return data;
+};
+export const updateLineItemQty = async (quoteId: string, itemId: string, quantity: number) => {
+  const { data } = await api.patch(`/quotes/${quoteId}/items/${itemId}`, { quantity }); return data;
+};
+export const getQuotePdfUri = async (id: string): Promise<string> => {
+  const FileSystem = await import('expo-file-system');
+  const token = await SecureStore.getItemAsync('access_token');
+  const uri = `${FileSystem.cacheDirectory}quote-${id}.pdf`;
+  const result = await FileSystem.downloadAsync(
+    `${API_URL}/quotes/${id}/pdf`,
+    uri,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  return result.uri;
+};
 
 // Vision
 export const identifyPart = async (base64Image: string, mode: 'label' | 'part') => {
