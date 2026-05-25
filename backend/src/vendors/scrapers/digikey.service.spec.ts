@@ -117,9 +117,9 @@ describe('DigiKeyService.search', () => {
 
   it('deduplicates products with same ManufacturerProductNumber across both sources', async () => {
     const p1 = makeProduct('LM358', 0.65);
-    const p3 = makeProduct('LM741', 1.00);
+    const p2 = makeProduct('LM741', 1.00);
 
-    mockAxios.post.mockResolvedValueOnce({ data: { Products: [p1, p3] } });
+    mockAxios.post.mockResolvedValueOnce({ data: { Products: [p1, p2] } });
     jest.spyOn(service as any, 'productDetailsSearch').mockResolvedValue([p1]);
     jest.spyOn(service as any, 'clientId', 'get').mockReturnValue('id');
     jest.spyOn(service as any, 'clientSecret', 'get').mockReturnValue('secret');
@@ -131,8 +131,8 @@ describe('DigiKeyService.search', () => {
   });
 
   it('places product details results before keyword results when score is equal', async () => {
-    const detailsProduct = makeProduct('SC1112', 60.00, 'Raspberry Pi');
-    const keywordProduct = makeProduct('SC1892', 1.00, 'Raspberry Pi');
+    const detailsProduct = makeProduct('SC1112', 10.00, 'Raspberry Pi');
+    const keywordProduct = makeProduct('SC1892', 10.00, 'Raspberry Pi');
 
     mockAxios.post.mockResolvedValueOnce({ data: { Products: [keywordProduct] } });
     jest.spyOn(service as any, 'productDetailsSearch').mockResolvedValue([detailsProduct]);

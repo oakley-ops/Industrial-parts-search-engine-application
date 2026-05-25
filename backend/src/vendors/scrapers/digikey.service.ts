@@ -94,9 +94,9 @@ export class DigiKeyService {
   }
 
   private scoreRelevance(query: string, name: string): number {
-    const queryWords = query.toLowerCase().split(/\W+/).filter(Boolean);
+    const queryWords = new Set(query.toLowerCase().split(/\W+/).filter(Boolean));
     const nameWords = new Set(name.toLowerCase().split(/\W+/).filter(Boolean));
-    return queryWords.filter(w => nameWords.has(w)).length;
+    return [...queryWords].filter(w => nameWords.has(w)).length;
   }
 
   private async productDetailsSearch(query: string, token: string): Promise<DkKeywordProduct[]> {
@@ -129,21 +129,20 @@ export class DigiKeyService {
           },
           { headers: { ...this.authHeaders(token), 'Content-Type': 'application/json' }, timeout: 10000 },
         ).then(r => r.data?.Products ?? []).catch(() => []),
-        this.productDetailsSearch(query, token),
+        /\s/.test(query) ? Promise.resolve([]) : this.productDetailsSearch(query, token),
       ]);
 
       // Merge: product details first (more exact), keyword results appended; dedup by MPN
       const seen = new Set<string>();
       const merged: DkKeywordProduct[] = [];
       for (const p of [...detailsProducts, ...keywordProducts]) {
-        if (p.ManufacturerProductNumber && !seen.has(p.ManufacturerProductNumber)) {
+        if (p.ManufacturerProductNumber && p.UnitPrice != null && !seen.has(p.ManufacturerProductNumber)) {
           seen.add(p.ManufacturerProductNumber);
           merged.push(p);
         }
       }
 
       return merged
-        .filter(p => p.ManufacturerProductNumber && p.UnitPrice != null)
         .map(p => ({
           p,
           score: this.scoreRelevance(query, `${p.Manufacturer.Name} ${p.ManufacturerProductNumber}`),
@@ -191,7 +190,7 @@ export class DigiKeyService {
         imageUrl: p.PrimaryPhoto || undefined,
       };
     } catch (err) {
-      this.logger.error(`DigiKey barcode lookup failed: ${err.message}`);
+      this.logger.error(`DigiKey barcode lookup failed: ${(err as Error)?.message ?? err}`);
       return null;
     }
   }
@@ -225,7 +224,7 @@ export class DigiKeyService {
         }))
       );
     } catch (err) {
-      this.logger.error(`DigiKey prices failed: ${err.message}`);
+      this.logger.error(`DigiKey prices failed: ${(err as Error)?.message ?? err}`);
       return [];
     }
   }
