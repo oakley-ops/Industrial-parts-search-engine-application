@@ -48,6 +48,12 @@ interface DkPricingResponse {
   ProductsCount: number;
 }
 
+interface DkProductDetailsResponse {
+  Products?: DkKeywordProduct[];
+  Product?: DkKeywordProduct;
+  ProductsCount?: number;
+}
+
 @Injectable()
 export class DigiKeyService {
   private readonly logger = new Logger(DigiKeyService.name);
@@ -85,6 +91,12 @@ export class DigiKeyService {
     if (!pricing?.length) return null;
     const qty1 = pricing.find(p => p.BreakQuantity === 1) ?? pricing[0];
     return qty1.UnitPrice ?? null;
+  }
+
+  private scoreRelevance(query: string, name: string): number {
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    const lname = name.toLowerCase();
+    return words.filter(w => lname.includes(w)).length;
   }
 
   async search(query: string): Promise<SearchResult[]> {
