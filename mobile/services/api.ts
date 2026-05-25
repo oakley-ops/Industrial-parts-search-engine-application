@@ -67,6 +67,20 @@ export const duplicateQuote = async (id: string) => {
 export const updateLineItemQty = async (quoteId: string, itemId: string, quantity: number) => {
   const { data } = await api.patch(`/quotes/${quoteId}/items/${itemId}`, { quantity }); return data;
 };
+export const updateLineItemPrice = async (quoteId: string, itemId: string, unitPrice: number) => {
+  const { data } = await api.patch(`/quotes/${quoteId}/items/${itemId}`, { unitPrice });
+  return data;
+};
+export const getDigiKeyPriceForQuantity = async (partNumber: string, quantity: number): Promise<number | null> => {
+  try {
+    const { data } = await api.get('/vendors/digikey/price-for-quantity', {
+      params: { partNumber, quantity },
+    });
+    return data.unitPrice ?? null;
+  } catch {
+    return null;
+  }
+};
 export const getQuotePdfUri = async (id: string): Promise<string> => {
   const token = await SecureStore.getItemAsync('access_token');
   const dest = `${FileSystem.cacheDirectory}quote-${id}.pdf`;

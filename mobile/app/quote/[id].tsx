@@ -9,7 +9,8 @@ import * as Print from 'expo-print';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getQuote, updateQuote, updateQuoteStatus, duplicateQuote,
-  removeLineItem, updateLineItemQty, deleteQuote, getQuotePdfUri,
+  removeLineItem, updateLineItemQty, updateLineItemPrice,
+  getDigiKeyPriceForQuantity, deleteQuote, getQuotePdfUri,
 } from '../../services/api';
 import { buildQuoteHtml } from '../../utils/quoteHtml';
 import { Quote, QuoteLineItem } from '../../types';
@@ -153,6 +154,17 @@ export default function QuoteDetailScreen() {
       setQuote(updated);
     } catch {
       Alert.alert('Error', 'Could not update quantity');
+      return;
+    }
+    if (item.vendorSlug === 'digikey' && item.vendorSku) {
+      getDigiKeyPriceForQuantity(item.vendorSku, qty)
+        .then(async (newPrice) => {
+          if (newPrice !== null) {
+            await updateLineItemPrice(quote!.id, item.id, newPrice);
+            load();
+          }
+        })
+        .catch(() => {});
     }
   };
 
