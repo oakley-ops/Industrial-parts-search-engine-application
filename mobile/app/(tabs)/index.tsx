@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Image, Modal } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { searchParts } from '../../services/api';
+import { openSearchStream } from '../../services/api';
 import { SearchResult } from '../../types';
 import { getCountryCode, isDomestic } from '../../services/location';
 import { ACTIVE_VENDORS } from '../../utils/searchConfig';
@@ -25,6 +25,7 @@ export default function SearchScreen() {
   const [priceSort, setPriceSort] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (params.query) {
@@ -41,21 +42,25 @@ export default function SearchScreen() {
     getSearchHistory().then(setSearchHistory);
   }, []);
 
-  const triggerSearch = async (q: string) => {
+  useEffect(() => () => { cleanupRef.current?.(); }, []);
+
+  const triggerSearch = (q: string) => {
     if (!q.trim()) return;
+    cleanupRef.current?.();
+    setResults([]);
     setLoading(true);
     setSearched(true);
     setInStockFirst(true);
-    try {
-      const data = await searchParts(q.trim());
-      setResults(data);
-      await addToSearchHistory(q.trim());
-      setSearchHistory(await getSearchHistory());
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    addToSearchHistory(q.trim()).then(() => getSearchHistory().then(setSearchHistory));
+
+    cleanupRef.current = openSearchStream(
+      q.trim(),
+      (_vendor, incoming) => {
+        setResults(prev => [...prev, ...incoming]);
+      },
+      () => setLoading(false),
+      () => setLoading(false),
+    );
   };
 
   const doSearch = async () => {
@@ -255,7 +260,7 @@ export default function SearchScreen() {
         </View>
       </Modal>
 
-      {loading && (
+      {loading && results.length === 0 && (
         <View style={s.center}>
           <ActivityIndicator size="large" color={THEME.colors.accent} />
           <Text style={s.loadingText}>Searching all vendors...</Text>
@@ -314,13 +319,21 @@ export default function SearchScreen() {
         )
       )}
 
-      {!loading && displayedResults.length > 0 && (
+      {displayedResults.length > 0 && (
         <FlatList
           data={displayedResults}
           keyExtractor={(item, i) => `${item.vendorSlug}-${i}`}
           renderItem={renderItem}
           contentContainerStyle={{ padding: 16 }}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            loading ? (
+              <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+                <ActivityIndicator size="small" color={THEME.colors.accent} />
+                <Text style={[s.loadingText, { marginTop: 6 }]}>Loading more...</Text>
+              </View>
+            ) : null
+          }
         />
       )}
     </View>
