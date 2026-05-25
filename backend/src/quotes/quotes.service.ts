@@ -71,14 +71,16 @@ export class QuotesService {
     );
   }
 
-  async updateLineItem(quoteId: string, itemId: string, quantity: number, userId: string) {
+  async updateLineItem(quoteId: string, itemId: string, dto: { quantity?: number; unitPrice?: number }, userId: string) {
     await this.findOne(quoteId, userId);
     const item = await this.itemsRepo.findOne({ where: { id: itemId } });
     if (!item) throw new NotFoundException('Line item not found');
-    await this.itemsRepo.update(itemId, {
-      quantity,
-      totalPrice: quantity * Number(item.unitPrice),
-    });
+    const quantity = dto.quantity ?? Number(item.quantity);
+    const unitPrice = dto.unitPrice ?? Number(item.unitPrice);
+    const patch: Partial<QuoteLineItem> = { totalPrice: quantity * unitPrice };
+    if (dto.quantity !== undefined) patch.quantity = quantity;
+    if (dto.unitPrice !== undefined) patch.unitPrice = unitPrice;
+    await this.itemsRepo.update(itemId, patch);
     return this.findOne(quoteId, userId);
   }
 

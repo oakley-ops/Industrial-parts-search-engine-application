@@ -66,7 +66,7 @@ export class QuotesController {
     @Body() dto: UpdateLineItemDto,
     @CurrentUser() user: { id: string },
   ) {
-    return this.svc.updateLineItem(id, itemId, dto.quantity, user.id);
+    return this.svc.updateLineItem(id, itemId, dto, user.id);
   }
 
   @Delete(':id/items/:itemId')
