@@ -262,7 +262,7 @@ export default function QuoteDetailScreen() {
             onPress={() => handleStatus(nextStatus)}
             disabled={saving}
           >
-            <Text style={s.statusBtnText}>{nextStatus === 'sent' ? 'Submit Quote →' : `Mark ${STATUS_LABELS[nextStatus]} →`}</Text>
+            <Text style={s.statusBtnText}>{nextStatus === 'sent' ? 'Submit Quote →' : 'Accept Quote →'}</Text>
           </TouchableOpacity>
         )}
         {canReject && (
