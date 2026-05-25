@@ -167,3 +167,16 @@ describe('VendorsService.searchStream', () => {
     expect(dkEvent?.results).toEqual([]);
   }, 10_000);
 });
+
+describe('VendorsService.getDigiKeyPriceForQuantity', () => {
+  it('delegates to digikey.getPriceForQuantity', async () => {
+    const redis = makeRedis();
+    const service = makeService(redis);
+    (service as any).digikey.getPriceForQuantity = jest.fn().mockResolvedValue(1.05);
+
+    const result = await service.getDigiKeyPriceForQuantity('LM385', 100);
+
+    expect(result).toBe(1.05);
+    expect((service as any).digikey.getPriceForQuantity).toHaveBeenCalledWith('LM385', 100);
+  });
+});

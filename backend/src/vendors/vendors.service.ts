@@ -131,6 +131,10 @@ export class VendorsService {
     return this.digikey.lookupBarcode(barcode);
   }
 
+  async getDigiKeyPriceForQuantity(partNumber: string, quantity: number): Promise<number | null> {
+    return this.digikey.getPriceForQuantity(partNumber, quantity);
+  }
+
   async getPriceFromVendor(vendorSlug: string, partNumber: string): Promise<PriceResult | null> {
     const scraper = this.scrapers.find(s => s.vendorSlug === vendorSlug);
     if (!scraper) return null;

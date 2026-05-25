@@ -39,4 +39,13 @@ export class VendorsController {
   lookupBarcode(@Param('barcode') barcode: string) {
     return this.svc.lookupBarcode(barcode);
   }
+
+  @Get('digikey/price-for-quantity')
+  async getDigiKeyPriceForQuantity(
+    @Query('partNumber') partNumber: string,
+    @Query('quantity') quantity: string,
+  ) {
+    const unitPrice = await this.svc.getDigiKeyPriceForQuantity(partNumber, parseInt(quantity, 10));
+    return { unitPrice };
+  }
 }
