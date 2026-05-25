@@ -5,6 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import configuration from './config/configuration';
+import { DbPingService } from './db-ping.service';
 import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -32,10 +33,14 @@ import { PriceIntelModule } from './price-intel/price-intel.module';
         retryAttempts: 15,
         retryDelay: 3000,
         extra: {
+          // TCP keep-alive prevents Supabase infrastructure from silently
+          // dropping idle connections without notifying the client
+          keepAlive: true,
+          keepAliveInitialDelayMillis: 0,
           // Recycle idle pool connections before Supabase pgBouncer drops them
-          idleTimeoutMillis: 10000,
+          idleTimeoutMillis: 5000,
           connectionTimeoutMillis: 10000,
-          max: 5,
+          max: 3,
         },
       }),
       inject: [ConfigService],
@@ -55,6 +60,7 @@ import { PriceIntelModule } from './price-intel/price-intel.module';
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    DbPingService,
   ],
 })
 export class AppModule {}
