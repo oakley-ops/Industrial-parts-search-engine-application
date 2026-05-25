@@ -84,4 +84,71 @@ describe('QuotesService', () => {
       expect(result).toEqual({ deleted: true });
     });
   });
+
+  describe('updateLineItem', () => {
+    const quoteId = 'quote-1';
+    const itemId = 'item-1';
+    const userId = 'user-a';
+    const quote = { id: quoteId, userId };
+
+    it('updates quantity and recomputes totalPrice using stored unitPrice', async () => {
+      const storedItem = { id: itemId, quantity: 3, unitPrice: 2.0 };
+      quotesRepo.findOne.mockResolvedValue(quote);
+      itemsRepo.findOne.mockResolvedValue(storedItem);
+      itemsRepo.update.mockResolvedValue({});
+
+      await service.updateLineItem(quoteId, itemId, { quantity: 5 }, userId);
+
+      expect(itemsRepo.update).toHaveBeenCalledWith(itemId, {
+        quantity: 5,
+        totalPrice: 10.0,
+      });
+      expect(itemsRepo.update).not.toHaveBeenCalledWith(
+        itemId,
+        expect.objectContaining({ unitPrice: expect.anything() }),
+      );
+    });
+
+    it('updates unitPrice and recomputes totalPrice using stored quantity', async () => {
+      const storedItem = { id: itemId, quantity: 4, unitPrice: 1.0 };
+      quotesRepo.findOne.mockResolvedValue(quote);
+      itemsRepo.findOne.mockResolvedValue(storedItem);
+      itemsRepo.update.mockResolvedValue({});
+
+      await service.updateLineItem(quoteId, itemId, { unitPrice: 3.5 }, userId);
+
+      expect(itemsRepo.update).toHaveBeenCalledWith(itemId, {
+        unitPrice: 3.5,
+        totalPrice: 14.0,
+      });
+      expect(itemsRepo.update).not.toHaveBeenCalledWith(
+        itemId,
+        expect.objectContaining({ quantity: expect.anything() }),
+      );
+    });
+
+    it('updates both quantity and unitPrice and recomputes totalPrice', async () => {
+      const storedItem = { id: itemId, quantity: 1, unitPrice: 1.0 };
+      quotesRepo.findOne.mockResolvedValue(quote);
+      itemsRepo.findOne.mockResolvedValue(storedItem);
+      itemsRepo.update.mockResolvedValue({});
+
+      await service.updateLineItem(quoteId, itemId, { quantity: 10, unitPrice: 1.05 }, userId);
+
+      expect(itemsRepo.update).toHaveBeenCalledWith(itemId, {
+        quantity: 10,
+        unitPrice: 1.05,
+        totalPrice: 10.5,
+      });
+    });
+
+    it('throws NotFoundException when line item does not exist', async () => {
+      quotesRepo.findOne.mockResolvedValue(quote);
+      itemsRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateLineItem(quoteId, itemId, { quantity: 5 }, userId),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });
