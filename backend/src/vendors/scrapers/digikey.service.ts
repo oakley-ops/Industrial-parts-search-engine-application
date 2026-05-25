@@ -93,13 +93,19 @@ export class DigiKeyService {
       const token = await this.getToken();
       const { data } = await axios.post<DkKeywordResponse>(
         `${this.apiBase}/keyword`,
-        { Keywords: query, RecordCount: 25, RecordStartPosition: 0 },
+        {
+          Keywords: query,
+          RecordCount: 50,
+          RecordStartPosition: 0,
+          Sort: { SortOption: 'SortByUnitPrice', Direction: 'Descending', SortParameterId: 0 },
+        },
         { headers: { ...this.authHeaders(token), 'Content-Type': 'application/json' }, timeout: 10000 },
       );
       if (!data?.Products) return [];
 
       return data.Products
         .filter(p => p.ManufacturerProductNumber && p.UnitPrice != null)
+        .sort((a, b) => (b.UnitPrice ?? 0) - (a.UnitPrice ?? 0))
         .map(p => ({
         vendorSlug: 'digikey',
         vendorName: 'DigiKey',
