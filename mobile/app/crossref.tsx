@@ -4,11 +4,12 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { findEquivalents } from '../services/api';
 import { CrossrefSuggestion } from '../types';
+import { THEME } from '../constants/theme';
 
 const CONFIDENCE = {
-  high: { color: '#16a34a', label: 'High' },
-  medium: { color: '#d97706', label: 'Medium' },
-  low: { color: '#dc2626', label: 'Low' },
+  high: { color: THEME.colors.success, label: 'High' },
+  medium: { color: THEME.colors.warning, label: 'Medium' },
+  low: { color: THEME.colors.danger, label: 'Low' },
 };
 
 export default function CrossrefScreen() {
@@ -51,27 +52,27 @@ export default function CrossrefScreen() {
     <View style={s.container}>
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={THEME.colors.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={s.headerTitle} numberOfLines={1}>Find Equivalent</Text>
           <Text style={s.headerSub} numberOfLines={1}>{partNumber}</Text>
         </View>
         <TouchableOpacity onPress={load} style={{ padding: 4 }}>
-          <Ionicons name="refresh" size={22} color="#fff" />
+          <Ionicons name="refresh" size={22} color={THEME.colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator size="large" color="#1e40af" />
+          <ActivityIndicator size="large" color={THEME.colors.accent} />
           <Text style={s.loadingTitle}>Searching for compatible parts...</Text>
           <Text style={s.loadingSub}>Analyzing specifications and cross-references</Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
           <View style={s.infoBox}>
-            <Ionicons name="swap-horizontal-outline" size={16} color="#1e40af" />
+            <Ionicons name="swap-horizontal-outline" size={16} color={THEME.colors.textSecondary} />
             <Text style={s.infoText}>
               AI-suggested equivalents for <Text style={{ fontWeight: '700' }}>{partNumber}</Text>
               {manufacturer ? ` (${manufacturer})` : ''}. Verify specs before ordering.
@@ -86,7 +87,7 @@ export default function CrossrefScreen() {
                 {error || 'This part may be too specialized or obscure for AI cross-referencing.'}
               </Text>
               <TouchableOpacity style={s.manualBtn} onPress={() => router.replace('/(tabs)')}>
-                <Ionicons name="search-outline" size={16} color="#1e40af" />
+                <Ionicons name="search-outline" size={16} color={THEME.colors.accent} />
                 <Text style={s.manualBtnText}>Search Manually</Text>
               </TouchableOpacity>
             </View>
@@ -128,46 +129,48 @@ export default function CrossrefScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { flex: 1, backgroundColor: THEME.colors.background },
   header: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e40af',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: THEME.colors.background,
     paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16, gap: 12,
+    borderBottomWidth: 1, borderBottomColor: THEME.colors.border,
   },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  headerSub: { color: '#93c5fd', fontSize: 12 },
+  headerTitle: { color: THEME.colors.textPrimary, fontSize: 18, fontWeight: '700' },
+  headerSub: { color: THEME.colors.textSecondary, fontSize: 12, fontVariant: ['tabular-nums'] },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, padding: 32 },
-  loadingTitle: { fontSize: 16, fontWeight: '600', color: '#111827' },
-  loadingSub: { fontSize: 13, color: '#9ca3af', textAlign: 'center' },
+  loadingTitle: { fontSize: 16, fontWeight: '600', color: THEME.colors.textPrimary },
+  loadingSub: { fontSize: 13, color: THEME.colors.textMuted, textAlign: 'center' },
   infoBox: {
-    flexDirection: 'row', gap: 8, backgroundColor: '#eff6ff',
-    borderRadius: 10, padding: 12, marginBottom: 16, alignItems: 'flex-start',
+    flexDirection: 'row', gap: 8, backgroundColor: THEME.colors.surface,
+    borderRadius: THEME.radius.card, padding: 12, marginBottom: 16, alignItems: 'flex-start',
+    borderWidth: 1, borderColor: THEME.colors.border,
   },
-  infoText: { flex: 1, fontSize: 13, color: '#1e40af', lineHeight: 18 },
+  infoText: { flex: 1, fontSize: 13, color: THEME.colors.textSecondary, lineHeight: 18 },
   card: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 16,
-    marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6', elevation: 2,
+    backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.card, padding: 16,
+    marginBottom: 12, borderWidth: 1, borderColor: THEME.colors.border,
   },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  manufacturer: { fontSize: 13, color: '#6b7280', fontWeight: '500' },
+  manufacturer: { fontSize: 13, color: THEME.colors.textSecondary, fontWeight: '500' },
   confidenceDot: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   confidenceLabel: { fontSize: 12, fontWeight: '600' },
-  partNumber: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 6 },
-  matchReason: { fontSize: 13, color: '#4b5563', lineHeight: 18, marginBottom: 10 },
+  partNumber: { fontSize: 22, fontWeight: '800', color: THEME.colors.textPrimary, marginBottom: 6, fontVariant: ['tabular-nums'] },
+  matchReason: { fontSize: 13, color: THEME.colors.textSecondary, lineHeight: 18, marginBottom: 10 },
   specRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
-  specChip: { backgroundColor: '#f3f4f6', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  specText: { fontSize: 12, color: '#374151' },
+  specChip: { backgroundColor: THEME.colors.surfaceElevated, borderRadius: THEME.radius.badge, paddingHorizontal: 8, paddingVertical: 3 },
+  specText: { fontSize: 12, color: THEME.colors.textSecondary },
   searchBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, backgroundColor: '#1e40af', borderRadius: 8, padding: 12,
+    gap: 6, backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 12,
   },
   searchBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  emptySub: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: THEME.colors.textPrimary },
+  emptySub: { fontSize: 14, color: THEME.colors.textSecondary, textAlign: 'center', lineHeight: 20 },
   manualBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#eff6ff', borderRadius: 8, paddingHorizontal: 16,
-    paddingVertical: 10, borderWidth: 1, borderColor: '#bfdbfe', marginTop: 8,
+    backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.button, paddingHorizontal: 16,
+    paddingVertical: 10, borderWidth: 1, borderColor: THEME.colors.border, marginTop: 8,
   },
-  manualBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 14 },
+  manualBtnText: { color: THEME.colors.accent, fontWeight: '600', fontSize: 14 },
 });

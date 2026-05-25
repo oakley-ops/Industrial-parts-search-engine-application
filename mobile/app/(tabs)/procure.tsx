@@ -4,6 +4,7 @@ import { useFocusEffect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getConversations, createConversation, deleteProcurementConversation } from '../../services/api';
 import { ProcurementConversation } from '../../types';
+import { THEME } from '../../constants/theme';
 
 export default function ProcureScreen() {
   const [conversations, setConversations] = useState<ProcurementConversation[]>([]);
@@ -47,7 +48,7 @@ export default function ProcureScreen() {
       </TouchableOpacity>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 48 }} size="large" color="#1e40af" />
+        <ActivityIndicator style={{ marginTop: 48 }} size="large" color={THEME.colors.accent} />
       ) : conversations.length === 0 ? (
         <View style={s.empty}>
           <Text style={{ fontSize: 64 }}>🤖</Text>
@@ -75,7 +76,7 @@ export default function ProcureScreen() {
                   <Ionicons name="trash-outline" size={18} color="#ef4444" />
                 </TouchableOpacity>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#9ca3af" style={{ alignSelf: 'flex-end', marginTop: 4 }} />
+              <Ionicons name="chevron-forward" size={16} color={THEME.colors.textMuted} style={{ alignSelf: 'flex-end', marginTop: 4 }} />
             </TouchableOpacity>
           )}
         />
@@ -85,19 +86,19 @@ export default function ProcureScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { flex: 1, backgroundColor: THEME.colors.background },
   newBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1e40af',
-    margin: 16, borderRadius: 10, padding: 14, justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: THEME.colors.accent,
+    margin: 16, borderRadius: THEME.radius.button, padding: 14, justifyContent: 'center',
   },
   newBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 12 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
-  emptySub: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: THEME.colors.textPrimary },
+  emptySub: { fontSize: 14, color: THEME.colors.textSecondary, textAlign: 'center', lineHeight: 22 },
   card: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12,
-    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06,
+    backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.card, padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: THEME.colors.border,
   },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 4 },
-  cardMeta: { fontSize: 13, color: '#6b7280' },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: THEME.colors.textPrimary, marginBottom: 4 },
+  cardMeta: { fontSize: 13, color: THEME.colors.textSecondary },
 });

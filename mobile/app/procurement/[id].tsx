@@ -13,6 +13,7 @@ import {
   getQuotes, createQuote, addLineItem, getPricesForPart,
 } from '../../services/api';
 import { ProcurementConversation, ProcurementMessage, ProcurementPart, Quote, PriceResult } from '../../types';
+import { THEME } from '../../constants/theme';
 
 function PartCard({
   part,
@@ -37,8 +38,8 @@ function PartCard({
       {part.notes ? <Text style={ps.notes}>{part.notes}</Text> : null}
       {loadingPrice ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-          <ActivityIndicator size="small" color="#1e40af" />
-          <Text style={{ color: '#6b7280', fontSize: 12 }}>Fetching prices...</Text>
+          <ActivityIndicator size="small" color={THEME.colors.accent} />
+          <Text style={{ color: THEME.colors.textSecondary, fontSize: 12 }}>Fetching prices...</Text>
         </View>
       ) : best ? (
         <Text style={ps.price}>${best.price!.toFixed(2)} <Text style={ps.priceVendor}>({best.vendorName})</Text></Text>
@@ -46,7 +47,7 @@ function PartCard({
         <Text style={ps.noPrice}>Price unavailable</Text>
       )}
       <TouchableOpacity style={ps.addBtn} onPress={() => onAddToQuote(part, best)}>
-        <Ionicons name="add-circle-outline" size={16} color="#1e40af" />
+        <Ionicons name="add-circle-outline" size={16} color={THEME.colors.accent} />
         <Text style={ps.addBtnText}>Add to Quote</Text>
       </TouchableOpacity>
     </View>
@@ -366,7 +367,7 @@ export default function ProcurementChatScreen() {
   if (loading) {
     return (
       <View style={s.center}>
-        <ActivityIndicator size="large" color="#1e40af" />
+        <ActivityIndicator size="large" color={THEME.colors.accent} />
       </View>
     );
   }
@@ -375,7 +376,7 @@ export default function ProcurementChatScreen() {
     <View style={s.container}>
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={THEME.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={s.headerTitle} numberOfLines={1}>{conversation?.title || 'Assistant'}</Text>
         <View style={{ width: 32 }} />
@@ -397,7 +398,7 @@ export default function ProcurementChatScreen() {
           {messages.map((msg, i) => renderMessage(msg, i))}
           {sending && (
             <View style={s.assistantBubble}>
-              <ActivityIndicator size="small" color="#1e40af" />
+              <ActivityIndicator size="small" color={THEME.colors.accent} />
             </View>
           )}
         </ScrollView>
@@ -411,29 +412,31 @@ export default function ProcurementChatScreen() {
                 resizeMode="cover"
               />
               <TouchableOpacity onPress={() => { setPendingImage(null); setPendingImageUri(null); }} style={s.previewDismiss}>
-                <Ionicons name="close-circle" size={20} color="#6b7280" />
+                <Ionicons name="close-circle" size={20} color={THEME.colors.textMuted} />
               </TouchableOpacity>
             </View>
           )}
           <View style={s.inputBar}>
             <TouchableOpacity onPress={openImagePicker} style={s.cameraBtn} disabled={sending}>
-              <Ionicons name="camera-outline" size={24} color={sending ? '#d1d5db' : '#6b7280'} />
+              <Ionicons name="camera-outline" size={24} color={sending ? THEME.colors.border : THEME.colors.textMuted} />
             </TouchableOpacity>
             <TextInput
               style={s.input}
               placeholder="Describe the repair job..."
+              placeholderTextColor={THEME.colors.placeholderText}
               value={input}
               onChangeText={setInput}
               multiline
               maxLength={500}
               editable={!sending}
+              keyboardAppearance="dark"
             />
             <TouchableOpacity
               style={[s.sendBtn, ((!input.trim() && !pendingImage) || sending) && s.sendBtnOff]}
               onPress={handleSend}
               disabled={(!input.trim() && !pendingImage) || sending}
             >
-              <Ionicons name="send" size={20} color={(input.trim() || pendingImage) && !sending ? '#fff' : '#9ca3af'} />
+              <Ionicons name="send" size={20} color={(input.trim() || pendingImage) && !sending ? '#fff' : THEME.colors.textMuted} />
             </TouchableOpacity>
           </View>
         </View>
@@ -444,25 +447,25 @@ export default function ProcurementChatScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <Text style={s.modalTitle}>Add to Quote</Text>
             <TouchableOpacity onPress={() => setShowQuoteModal(false)}>
-              <Ionicons name="close" size={24} color="#111827" />
+              <Ionicons name="close" size={24} color={THEME.colors.textPrimary} />
             </TouchableOpacity>
           </View>
           {addAllParts ? (
             <View style={s.selectedBanner}>
-              <Text style={{ fontWeight: '700', color: '#1e40af' }}>Adding {addAllParts.length} parts to quote</Text>
+              <Text style={{ fontWeight: '700', color: THEME.colors.accent }}>Adding {addAllParts.length} parts to quote</Text>
             </View>
           ) : selectedPart ? (
             <View style={s.selectedBanner}>
-              <Text style={{ fontWeight: '700', color: '#1e40af' }}>{selectedPart.partNumber}</Text>
-              <Text style={{ fontWeight: '700' }}>
+              <Text style={{ fontWeight: '700', color: THEME.colors.accent }}>{selectedPart.partNumber}</Text>
+              <Text style={{ fontWeight: '700', color: THEME.colors.textPrimary }}>
                 {selectedPrice ? `$${selectedPrice.price?.toFixed(2)}` : 'No price'}
               </Text>
             </View>
           ) : null}
           {!addAllParts && (
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <Text style={{ fontSize: 16, fontWeight: '600' }}>Quantity</Text>
-              <TextInput style={s.qtyInput} value={qty} onChangeText={setQty} keyboardType="number-pad" />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: THEME.colors.textPrimary }}>Quantity</Text>
+              <TextInput style={s.qtyInput} value={qty} onChangeText={setQty} keyboardType="number-pad" keyboardAppearance="dark" />
             </View>
           )}
           {quotes.filter(q => q.status === 'draft').length > 0 && (
@@ -470,14 +473,14 @@ export default function ProcurementChatScreen() {
               <Text style={s.sectionLabel}>ADD TO EXISTING QUOTE</Text>
               {quotes.filter(q => q.status === 'draft').map(q => (
                 <TouchableOpacity key={q.id} style={s.quoteRow} onPress={() => addToExistingQuote(q.id)} disabled={savingQuote}>
-                  <Text style={{ fontWeight: '600', color: '#111827' }}>{q.title}</Text>
-                  <Text style={{ color: '#6b7280', fontSize: 13 }}>{q.lineItems?.length || 0} items</Text>
+                  <Text style={{ fontWeight: '600', color: THEME.colors.textPrimary }}>{q.title}</Text>
+                  <Text style={{ color: THEME.colors.textSecondary, fontSize: 13 }}>{q.lineItems?.length || 0} items</Text>
                 </TouchableOpacity>
               ))}
             </>
           )}
           <Text style={[s.sectionLabel, { marginTop: 16 }]}>CREATE NEW QUOTE</Text>
-          <TextInput style={s.textInput} placeholder="Quote title..." value={newQuoteTitle} onChangeText={setNewQuoteTitle} />
+          <TextInput style={s.textInput} placeholder="Quote title..." placeholderTextColor={THEME.colors.placeholderText} value={newQuoteTitle} onChangeText={setNewQuoteTitle} keyboardAppearance="dark" />
           <TouchableOpacity
             style={[s.createBtn, (!newQuoteTitle.trim() || savingQuote) && { opacity: 0.5 }]}
             onPress={createAndAdd}
@@ -492,60 +495,61 @@ export default function ProcurementChatScreen() {
 }
 
 const ps = StyleSheet.create({
-  card: { backgroundColor: '#f8fafc', borderRadius: 10, padding: 12, marginTop: 10, borderWidth: 1, borderColor: '#e2e8f0' },
-  partNumber: { fontSize: 15, fontWeight: '800', color: '#111827', flex: 1 },
-  qty: { fontSize: 13, color: '#6b7280', fontWeight: '600' },
-  description: { fontSize: 13, color: '#374151', marginBottom: 2 },
-  notes: { fontSize: 12, color: '#6b7280', fontStyle: 'italic', marginBottom: 4 },
-  price: { fontSize: 16, fontWeight: '800', color: '#1e40af', marginTop: 6 },
-  priceVendor: { fontSize: 12, fontWeight: '400', color: '#6b7280' },
-  noPrice: { fontSize: 13, color: '#9ca3af', fontStyle: 'italic', marginTop: 6 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10, borderWidth: 1.5, borderColor: '#1e40af', borderRadius: 6, padding: 8, justifyContent: 'center' },
-  addBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 13 },
+  card: { backgroundColor: THEME.colors.surfaceElevated, borderRadius: THEME.radius.card, padding: 12, marginTop: 10, borderWidth: 1, borderColor: THEME.colors.border },
+  partNumber: { fontSize: 15, fontWeight: '800', color: THEME.colors.textPrimary, flex: 1, fontVariant: ['tabular-nums'] },
+  qty: { fontSize: 13, color: THEME.colors.textSecondary, fontWeight: '600' },
+  description: { fontSize: 13, color: THEME.colors.textPrimary, marginBottom: 2 },
+  notes: { fontSize: 12, color: THEME.colors.textSecondary, fontStyle: 'italic', marginBottom: 4 },
+  price: { fontSize: 16, fontWeight: '800', color: THEME.colors.accent, marginTop: 6, fontVariant: ['tabular-nums'] },
+  priceVendor: { fontSize: 12, fontWeight: '400', color: THEME.colors.textSecondary },
+  noPrice: { fontSize: 13, color: THEME.colors.textMuted, fontStyle: 'italic', marginTop: 6 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10, borderWidth: 1.5, borderColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 8, justifyContent: 'center' },
+  addBtnText: { color: THEME.colors.accent, fontWeight: '600', fontSize: 13 },
 });
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { flex: 1, backgroundColor: THEME.colors.background },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#1e40af', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16,
+    backgroundColor: THEME.colors.background, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16,
+    borderBottomWidth: 1, borderBottomColor: THEME.colors.border,
   },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700', flex: 1, textAlign: 'center' },
+  headerTitle: { color: THEME.colors.textPrimary, fontSize: 18, fontWeight: '700', flex: 1, textAlign: 'center' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyChat: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
-  emptyChatTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  emptyChatSub: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 22 },
-  bubble: { maxWidth: '80%', borderRadius: 16, padding: 12, marginBottom: 10 },
-  userBubble: { backgroundColor: '#1e40af', alignSelf: 'flex-end', borderBottomRightRadius: 4 },
-  assistantBubble: { backgroundColor: '#fff', alignSelf: 'flex-start', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#e5e7eb', padding: 14, borderRadius: 16, marginBottom: 10, maxWidth: '92%' },
-  bubbleText: { fontSize: 15, color: '#111827', lineHeight: 22 },
+  emptyChatTitle: { fontSize: 20, fontWeight: '700', color: THEME.colors.textPrimary, marginBottom: 8 },
+  emptyChatSub: { fontSize: 14, color: THEME.colors.textSecondary, textAlign: 'center', lineHeight: 22 },
+  bubble: { maxWidth: '80%', borderRadius: 8, padding: 12, marginBottom: 10 },
+  userBubble: { backgroundColor: THEME.colors.accent, alignSelf: 'flex-end', borderBottomRightRadius: 2 },
+  assistantBubble: { backgroundColor: THEME.colors.surface, alignSelf: 'flex-start', borderBottomLeftRadius: 2, borderWidth: 1, borderColor: THEME.colors.border, padding: 14, borderRadius: 8, marginBottom: 10, maxWidth: '92%' },
+  bubbleText: { fontSize: 15, color: THEME.colors.textPrimary, lineHeight: 22 },
   userBubbleText: { color: '#fff' },
-  addAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#1e40af', borderRadius: 8, padding: 10, justifyContent: 'center', marginTop: 10 },
+  addAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 10, justifyContent: 'center', marginTop: 10 },
   addAllBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   partsList: { marginTop: 4 },
   inputBar: {
     flexDirection: 'row', alignItems: 'flex-end', gap: 10, padding: 12,
-    backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e5e7eb',
+    backgroundColor: THEME.colors.surface, borderTopWidth: 1, borderTopColor: THEME.colors.border,
   },
-  input: { flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 12, fontSize: 15, maxHeight: 100 },
-  sendBtn: { backgroundColor: '#1e40af', borderRadius: 10, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  sendBtnOff: { backgroundColor: '#f3f4f6' },
+  input: { flex: 1, borderWidth: 1, borderColor: THEME.colors.border, borderRadius: THEME.radius.input, padding: 12, fontSize: 15, maxHeight: 100, backgroundColor: THEME.colors.background, color: THEME.colors.textPrimary },
+  sendBtn: { backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  sendBtnOff: { backgroundColor: THEME.colors.surface },
   cameraBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   previewStrip: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8,
-    backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e5e7eb',
+    backgroundColor: THEME.colors.surface, borderTopWidth: 1, borderTopColor: THEME.colors.border,
   },
-  previewThumb: { width: 80, height: 80, borderRadius: 8 },
+  previewThumb: { width: 80, height: 80, borderRadius: THEME.radius.badge },
   previewDismiss: { marginLeft: 8 },
-  msgImage: { width: '100%', height: 200, borderRadius: 10, marginBottom: 8 },
-  photoBadge: { backgroundColor: '#f3f4f6', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 6, alignSelf: 'flex-start' },
-  photoBadgeText: { fontSize: 12, color: '#6b7280' },
-  modal: { flex: 1, padding: 24, backgroundColor: '#fff' },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
-  selectedBanner: { backgroundColor: '#eff6ff', borderRadius: 10, padding: 12, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between' },
-  qtyInput: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, width: 80, textAlign: 'center', fontSize: 16 },
-  sectionLabel: { fontSize: 12, fontWeight: '700', color: '#6b7280', marginBottom: 8, letterSpacing: 0.5 },
-  quoteRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, marginBottom: 8 },
-  textInput: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 14, fontSize: 15, marginBottom: 12 },
-  createBtn: { backgroundColor: '#1e40af', borderRadius: 10, padding: 16, alignItems: 'center' },
+  msgImage: { width: '100%', height: 200, borderRadius: THEME.radius.badge, marginBottom: 8 },
+  photoBadge: { backgroundColor: THEME.colors.surfaceElevated, borderRadius: THEME.radius.badge, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 6, alignSelf: 'flex-start' },
+  photoBadgeText: { fontSize: 12, color: THEME.colors.textSecondary },
+  modal: { flex: 1, padding: 24, backgroundColor: THEME.colors.surface },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: THEME.colors.textPrimary },
+  selectedBanner: { backgroundColor: THEME.colors.surfaceElevated, borderRadius: THEME.radius.card, padding: 12, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between' },
+  qtyInput: { borderWidth: 1, borderColor: THEME.colors.border, borderRadius: THEME.radius.input, padding: 10, width: 80, textAlign: 'center', fontSize: 16, backgroundColor: THEME.colors.background, color: THEME.colors.textPrimary },
+  sectionLabel: { fontSize: 12, fontWeight: '700', color: THEME.colors.textSecondary, marginBottom: 8, letterSpacing: 0.5, textTransform: 'uppercase' },
+  quoteRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderColor: THEME.colors.border, borderRadius: THEME.radius.input, marginBottom: 8, backgroundColor: THEME.colors.background },
+  textInput: { borderWidth: 1, borderColor: THEME.colors.border, borderRadius: THEME.radius.input, padding: 14, fontSize: 15, marginBottom: 12, backgroundColor: THEME.colors.background, color: THEME.colors.textPrimary },
+  createBtn: { backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 16, alignItems: 'center' },
 });

@@ -7,6 +7,7 @@ import { SearchResult } from '../../types';
 import { getCountryCode, isDomestic } from '../../services/location';
 import { ACTIVE_VENDORS } from '../../utils/searchConfig';
 import { getSearchHistory, addToSearchHistory, clearSearchHistory } from '../../utils/searchHistory';
+import { THEME, vendorColor } from '../../constants/theme';
 
 export default function SearchScreen() {
   const params = useLocalSearchParams<{ query?: string }>();
@@ -84,16 +85,16 @@ export default function SearchScreen() {
     })}>
       <View style={s.cardTop}>
         <View style={s.vendorBadgeRow}>
-          <View style={s.badge}><Text style={s.badgeText}>{item.vendorName}</Text></View>
+          <View style={[s.badge, { backgroundColor: vendorColor(item.vendorSlug) }]}><Text style={s.badgeText}>{item.vendorName}</Text></View>
           {countryCode && (
             <Text style={s.flagEmoji}>
               {isDomestic(item.vendorSlug, countryCode) ? '🇺🇸' : '🌍'}
             </Text>
           )}
         </View>
-        <View style={[s.stockBadge, { backgroundColor: item.inStock ? '#dcfce7' : '#fef3c7' }]}>
-          <Text style={{ color: item.inStock ? '#16a34a' : '#d97706', fontSize: 11, fontWeight: '600' }}>
-            {item.inStock ? 'In Stock' : 'Check Availability'}
+        <View style={[s.stockBadge, { backgroundColor: item.inStock ? THEME.colors.successSubtle : THEME.colors.dangerSubtle }]}>
+          <Text style={{ color: item.inStock ? THEME.colors.success : THEME.colors.danger, fontSize: 11, fontWeight: '600' }}>
+            {item.inStock ? 'IN STOCK' : 'OUT OF STOCK'}
           </Text>
         </View>
       </View>
@@ -101,7 +102,7 @@ export default function SearchScreen() {
         {item.imageUrl ? (
           <Image source={{ uri: item.imageUrl }} style={s.thumb} resizeMode="contain" />
         ) : (
-          <View style={s.thumbPlaceholder}><Ionicons name="cube-outline" size={28} color="#d1d5db" /></View>
+          <View style={s.thumbPlaceholder}><Ionicons name="cube-outline" size={28} color={THEME.colors.textMuted} /></View>
         )}
         <View style={{ flex: 1 }}>
           <Text style={s.name} numberOfLines={2}>{item.name}</Text>
@@ -110,7 +111,7 @@ export default function SearchScreen() {
             {item.price !== null
               ? <Text style={s.price}>${item.price.toFixed(2)}</Text>
               : <Text style={s.noPrice}>Price on request</Text>}
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            <Ionicons name="chevron-forward" size={20} color={THEME.colors.textMuted} />
           </View>
         </View>
       </View>
@@ -138,11 +139,11 @@ export default function SearchScreen() {
     <View style={s.container}>
       <View style={s.searchRow}>
         <View style={s.searchBox}>
-          <Ionicons name="search" size={20} color="#6b7280" style={{ marginRight: 8 }} />
-          <TextInput style={s.searchInput} placeholder="Part number, name, keyword..." value={query}
-            onChangeText={setQuery} onSubmitEditing={doSearch} returnKeyType="search" autoCapitalize="none" autoCorrect={false} />
+          <Ionicons name="search" size={20} color={THEME.colors.textMuted} style={{ marginRight: 8 }} />
+          <TextInput style={s.searchInput} placeholder="Part number, name, keyword..." placeholderTextColor={THEME.colors.placeholderText} value={query}
+            onChangeText={setQuery} onSubmitEditing={doSearch} returnKeyType="search" autoCapitalize="none" autoCorrect={false} keyboardAppearance="dark" />
           {query.length > 0 && <TouchableOpacity onPress={() => { setQuery(''); setResults([]); setSearched(false); }}>
-            <Ionicons name="close-circle" size={20} color="#9ca3af" /></TouchableOpacity>}
+            <Ionicons name="close-circle" size={20} color={THEME.colors.textMuted} /></TouchableOpacity>}
         </View>
         <TouchableOpacity style={s.searchBtn} onPress={doSearch} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.searchBtnText}>Search</Text>}
@@ -203,7 +204,7 @@ export default function SearchScreen() {
 
       {loading && (
         <View style={s.center}>
-          <ActivityIndicator size="large" color="#1e40af" />
+          <ActivityIndicator size="large" color={THEME.colors.accent} />
           <Text style={s.loadingText}>Searching all vendors...</Text>
         </View>
       )}
@@ -222,7 +223,7 @@ export default function SearchScreen() {
                 triggerSearch(shorter);
               }}
             >
-              <Ionicons name="search-outline" size={16} color="#1e40af" />
+              <Ionicons name="search-outline" size={16} color={THEME.colors.accent} />
               <Text style={s.broaderBtnText}>
                 Try "{query.trim().split(' ').slice(0, 2).join(' ')}"
               </Text>
@@ -246,7 +247,7 @@ export default function SearchScreen() {
                 style={s.historyRow}
                 onPress={() => { setQuery(item); triggerSearch(item); }}
               >
-                <Ionicons name="time-outline" size={16} color="#9ca3af" />
+                <Ionicons name="time-outline" size={16} color={THEME.colors.textMuted} />
                 <Text style={s.historyItem}>{item}</Text>
               </TouchableOpacity>
             ))}
@@ -274,46 +275,46 @@ export default function SearchScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  searchRow: { flexDirection: 'row', padding: 16, backgroundColor: '#1e40af', gap: 10 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 12 },
-  searchInput: { flex: 1, height: 44, fontSize: 15 },
-  searchBtn: { backgroundColor: '#f59e0b', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: THEME.colors.background },
+  searchRow: { flexDirection: 'row', padding: 16, backgroundColor: THEME.colors.background, gap: 10, borderBottomWidth: 1, borderBottomColor: THEME.colors.border },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.input, paddingHorizontal: 12, borderWidth: 1, borderColor: THEME.colors.border },
+  searchInput: { flex: 1, height: 44, fontSize: 15, color: THEME.colors.textPrimary },
+  searchBtn: { backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, paddingHorizontal: 16, justifyContent: 'center' },
   searchBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  cameraBtn: { backgroundColor: '#1e3a8a', borderRadius: 10, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  cameraBtn: { backgroundColor: THEME.colors.surfaceElevated, borderRadius: THEME.radius.button, width: 44, height: 44, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: THEME.colors.border },
   chips: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#eff6ff', borderRadius: 20, borderWidth: 1, borderColor: '#bfdbfe' },
-  chipText: { color: '#1e40af', fontSize: 12, fontWeight: '600' },
-  chipActive: { backgroundColor: '#1e40af', borderColor: '#1e40af' },
+  chip: { paddingHorizontal: 12, paddingVertical: 4, backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.chip, borderWidth: 1, borderColor: THEME.colors.border },
+  chipText: { color: THEME.colors.textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  chipActive: { backgroundColor: THEME.colors.accent, borderColor: THEME.colors.accent },
   chipTextActive: { color: '#fff' },
-  chipsScroll: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb', maxHeight: 52 },
+  chipsScroll: { backgroundColor: THEME.colors.background, borderBottomWidth: 1, borderBottomColor: THEME.colors.border, maxHeight: 52 },
   historyContainer: { padding: 16 },
   historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  historyTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  historyClear: { fontSize: 13, color: '#6b7280', fontWeight: '600' },
-  historyRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  historyItem: { fontSize: 15, color: '#374151' },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06 },
+  historyTitle: { fontSize: 15, fontWeight: '700', color: THEME.colors.textPrimary },
+  historyClear: { fontSize: 13, color: THEME.colors.textSecondary, fontWeight: '600' },
+  historyRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: THEME.colors.border },
+  historyItem: { fontSize: 15, color: THEME.colors.textPrimary },
+  card: { backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.card, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: THEME.colors.border },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   cardBody: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  thumb: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: '#f3f4f6', backgroundColor: '#fafafa' },
-  thumbPlaceholder: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: '#f3f4f6', backgroundColor: '#fafafa', justifyContent: 'center', alignItems: 'center' },
-  badge: { backgroundColor: '#1e40af', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  thumb: { width: 64, height: 64, borderRadius: THEME.radius.badge, borderWidth: 1, borderColor: THEME.colors.border, backgroundColor: THEME.colors.surfaceElevated },
+  thumbPlaceholder: { width: 64, height: 64, borderRadius: THEME.radius.badge, borderWidth: 1, borderColor: THEME.colors.border, backgroundColor: THEME.colors.surfaceElevated, justifyContent: 'center', alignItems: 'center' },
+  badge: { borderRadius: THEME.radius.badge, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   vendorBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
   flagEmoji: { fontSize: 14 },
-  stockBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  name: { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 4 },
-  sku: { fontSize: 12, color: '#6b7280', marginBottom: 8 },
+  stockBadge: { borderRadius: THEME.radius.badge, paddingHorizontal: 8, paddingVertical: 3 },
+  name: { fontSize: 15, fontWeight: '600', color: THEME.colors.textPrimary, marginBottom: 4 },
+  sku: { fontSize: 12, color: THEME.colors.textSecondary, marginBottom: 8, fontVariant: ['tabular-nums'] },
   cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  price: { fontSize: 20, fontWeight: '800', color: '#1e40af' },
-  noPrice: { fontSize: 14, color: '#9ca3af', fontStyle: 'italic' },
+  price: { fontSize: 20, fontWeight: '800', color: THEME.colors.accent, fontVariant: ['tabular-nums'] },
+  noPrice: { fontSize: 14, color: THEME.colors.textMuted, fontStyle: 'italic' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 12 },
-  loadingText: { color: '#6b7280', fontSize: 14 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  emptySub: { fontSize: 14, color: '#6b7280', textAlign: 'center' },
-  broaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: '#eff6ff', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#bfdbfe' },
-  broaderBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 14 },
-  heroTitle: { fontSize: 22, fontWeight: '800', color: '#111827', textAlign: 'center', marginBottom: 8 },
-  heroSub: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 22 },
+  loadingText: { color: THEME.colors.textSecondary, fontSize: 14 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: THEME.colors.textPrimary },
+  emptySub: { fontSize: 14, color: THEME.colors.textSecondary, textAlign: 'center' },
+  broaderBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.button, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: THEME.colors.border },
+  broaderBtnText: { color: THEME.colors.accent, fontWeight: '600', fontSize: 14 },
+  heroTitle: { fontSize: 22, fontWeight: '800', color: THEME.colors.textPrimary, textAlign: 'center', marginBottom: 8 },
+  heroSub: { fontSize: 14, color: THEME.colors.textSecondary, textAlign: 'center', lineHeight: 22 },
 });

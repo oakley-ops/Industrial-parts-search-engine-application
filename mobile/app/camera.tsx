@@ -10,6 +10,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { identifyPart } from '../services/api';
+import { THEME } from '../constants/theme';
 
 const resizeAndEncode = async (uri: string): Promise<string> => {
   const resized = await ImageManipulator.manipulateAsync(
@@ -36,7 +37,7 @@ export default function CameraScreen() {
     return (
       <View style={s.container}>
         <View style={s.permBox}>
-          <Ionicons name="camera-outline" size={56} color="#9ca3af" />
+          <Ionicons name="camera-outline" size={56} color={THEME.colors.textMuted} />
           <Text style={s.permTitle}>Camera Access Needed</Text>
           <Text style={s.permSub}>Required to scan part labels and identify components</Text>
           <TouchableOpacity style={s.permBtn} onPress={requestPermission}>
@@ -121,7 +122,7 @@ export default function CameraScreen() {
         {loading && (
           <View style={s.analyzingBox}>
             <View style={s.analyzingSpinnerWrap}>
-              <ActivityIndicator size="large" color="#1e40af" />
+              <ActivityIndicator size="large" color={THEME.colors.accent} />
             </View>
             <Text style={s.analyzingTitle}>Analyzing with AI...</Text>
             <Text style={s.analyzingSub}>Identifying part, manufacturer, and model number</Text>
@@ -131,13 +132,13 @@ export default function CameraScreen() {
         {!loading && result && (
           <View style={s.resultBox}>
             {/* Match type banner */}
-            <View style={[s.matchBanner, { backgroundColor: isExactMatch ? '#dcfce7' : result.confidence === 'medium' ? '#fef3c7' : '#eff6ff' }]}>
+            <View style={[s.matchBanner, { backgroundColor: isExactMatch ? THEME.colors.successSubtle : result.confidence === 'medium' ? THEME.colors.warningSubtle : THEME.colors.surfaceElevated }]}>
               <Ionicons
                 name={isExactMatch ? 'checkmark-circle' : result.confidence === 'medium' ? 'git-compare-outline' : 'albums-outline'}
                 size={15}
-                color={isExactMatch ? '#16a34a' : result.confidence === 'medium' ? '#d97706' : '#1e40af'}
+                color={isExactMatch ? THEME.colors.success : result.confidence === 'medium' ? THEME.colors.warning : THEME.colors.accent}
               />
-              <Text style={[s.matchBannerText, { color: isExactMatch ? '#16a34a' : result.confidence === 'medium' ? '#d97706' : '#1e40af' }]}>
+              <Text style={[s.matchBannerText, { color: isExactMatch ? THEME.colors.success : result.confidence === 'medium' ? THEME.colors.warning : THEME.colors.accent }]}>
                 {matchLabel}
               </Text>
               {!isExactMatch && (
@@ -157,14 +158,14 @@ export default function CameraScreen() {
 
             {!isExactMatch && searchQuery ? (
               <View style={s.similarNote}>
-                <Ionicons name="information-circle-outline" size={14} color="#6b7280" />
+                <Ionicons name="information-circle-outline" size={14} color={THEME.colors.textMuted} />
                 <Text style={s.similarNoteText}>No part number found — searching for similar items</Text>
               </View>
             ) : null}
 
             <View style={s.actionRow}>
               <TouchableOpacity style={s.retakeBtn} onPress={reset}>
-                <Ionicons name="camera-outline" size={18} color="#1e40af" />
+                <Ionicons name="camera-outline" size={18} color={THEME.colors.accent} />
                 <Text style={s.retakeBtnText}>Retake</Text>
               </TouchableOpacity>
 
@@ -200,14 +201,14 @@ export default function CameraScreen() {
           style={[s.modeBtn, mode === 'label' && s.modeBtnActive]}
           onPress={() => setMode('label')}
         >
-          <Ionicons name="pricetag-outline" size={16} color={mode === 'label' ? '#fff' : '#93c5fd'} />
+          <Ionicons name="pricetag-outline" size={16} color={mode === 'label' ? '#fff' : THEME.colors.textSecondary} />
           <Text style={[s.modeBtnText, mode === 'label' && { color: '#fff' }]}>Scan Label</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[s.modeBtn, mode === 'part' && s.modeBtnActive]}
           onPress={() => setMode('part')}
         >
-          <Ionicons name="cube-outline" size={16} color={mode === 'part' ? '#fff' : '#93c5fd'} />
+          <Ionicons name="cube-outline" size={16} color={mode === 'part' ? '#fff' : THEME.colors.textSecondary} />
           <Text style={[s.modeBtnText, mode === 'part' && { color: '#fff' }]}>Identify Part</Text>
         </TouchableOpacity>
       </View>
@@ -253,21 +254,21 @@ export default function CameraScreen() {
 const CORNER = 24;
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e40af', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: THEME.colors.background, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: THEME.colors.border },
+  headerTitle: { color: THEME.colors.textPrimary, fontSize: 18, fontWeight: '700' },
 
   // Permission
-  permBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 12, backgroundColor: '#f9fafb' },
-  permTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
-  permSub: { fontSize: 14, color: '#6b7280', textAlign: 'center' },
-  permBtn: { backgroundColor: '#1e40af', borderRadius: 10, paddingHorizontal: 32, paddingVertical: 14, marginTop: 8 },
+  permBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 12, backgroundColor: THEME.colors.background },
+  permTitle: { fontSize: 20, fontWeight: '700', color: THEME.colors.textPrimary },
+  permSub: { fontSize: 14, color: THEME.colors.textSecondary, textAlign: 'center' },
+  permBtn: { backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, paddingHorizontal: 32, paddingVertical: 14, marginTop: 8 },
   permBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 
   // Mode toggle
-  modeRow: { flexDirection: 'row', backgroundColor: '#1e3a8a', paddingHorizontal: 16, paddingBottom: 12, gap: 10 },
-  modeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#3b82f6' },
-  modeBtnActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  modeBtnText: { color: '#93c5fd', fontWeight: '600', fontSize: 14 },
+  modeRow: { flexDirection: 'row', backgroundColor: THEME.colors.background, paddingHorizontal: 16, paddingBottom: 12, gap: 10 },
+  modeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: THEME.radius.button, borderWidth: 1, borderColor: THEME.colors.border },
+  modeBtnActive: { backgroundColor: THEME.colors.accent, borderColor: THEME.colors.accent },
+  modeBtnText: { color: THEME.colors.textSecondary, fontWeight: '600', fontSize: 14 },
 
   // Camera
   camera: { flex: 1 },
@@ -289,28 +290,24 @@ const s = StyleSheet.create({
 
   // Preview / result
   previewImage: { width: '100%', height: 260 },
-  analyzingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb', gap: 14, paddingHorizontal: 32 },
-  analyzingSpinnerWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#eff6ff', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
-  analyzingTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  analyzingSub: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 20 },
-  resultBox: { flex: 1, backgroundColor: '#fff', padding: 20, gap: 8 },
+  analyzingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: THEME.colors.surface, gap: 14, paddingHorizontal: 32 },
+  analyzingSpinnerWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: THEME.colors.surfaceElevated, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  analyzingTitle: { fontSize: 18, fontWeight: '700', color: THEME.colors.textPrimary },
+  analyzingSub: { fontSize: 14, color: THEME.colors.textSecondary, textAlign: 'center', lineHeight: 20 },
+  resultBox: { flex: 1, backgroundColor: THEME.colors.surface, padding: 20, gap: 8 },
   confidenceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   confidenceText: { fontSize: 13, fontWeight: '600' },
-  matchBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 4 },
+  matchBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: THEME.radius.button, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 4 },
   matchBannerText: { fontSize: 13, fontWeight: '700' },
-  matchBannerSub: { fontSize: 12, color: '#9ca3af' },
-  similarNote: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#f9fafb', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 7 },
-  similarNoteText: { fontSize: 12, color: '#6b7280', flex: 1 },
-  searchQueryRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f3f4f6', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
-  searchQueryText: { fontSize: 12, color: '#6b7280', flex: 1 },
-  manufacturer: { fontSize: 14, color: '#6b7280', fontWeight: '500' },
-  partNumber: { fontSize: 28, fontWeight: '800', color: '#111827' },
-  description: { fontSize: 14, color: '#4b5563', lineHeight: 20 },
-  searchQueryRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f3f4f6', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
-  searchQueryText: { fontSize: 12, color: '#6b7280', flex: 1 },
+  matchBannerSub: { fontSize: 12, color: THEME.colors.textMuted },
+  similarNote: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: THEME.colors.surfaceElevated, borderRadius: THEME.radius.badge, paddingHorizontal: 10, paddingVertical: 7 },
+  similarNoteText: { fontSize: 12, color: THEME.colors.textSecondary, flex: 1 },
+  manufacturer: { fontSize: 14, color: THEME.colors.textSecondary, fontWeight: '500' },
+  partNumber: { fontSize: 28, fontWeight: '800', color: THEME.colors.textPrimary, fontVariant: ['tabular-nums'] },
+  description: { fontSize: 14, color: THEME.colors.textSecondary, lineHeight: 20 },
   actionRow: { flexDirection: 'row', gap: 10, marginTop: 'auto', paddingTop: 16 },
-  retakeBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: '#1e40af', borderRadius: 10, padding: 14, flex: 1 },
-  retakeBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 15 },
-  searchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#1e40af', borderRadius: 10, padding: 14, flex: 2 },
+  retakeBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 14, flex: 1 },
+  retakeBtnText: { color: THEME.colors.accent, fontWeight: '600', fontSize: 15 },
+  searchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 14, flex: 2 },
   searchBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

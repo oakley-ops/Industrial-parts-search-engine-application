@@ -7,6 +7,7 @@ import * as Sharing from 'expo-sharing';
 import { getQuote } from '../../services/api';
 import { Quote } from '../../types';
 import { buildQuoteHtml } from '../../utils/quoteHtml';
+import { THEME } from '../../constants/theme';
 
 export default function QuoteExportScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -49,7 +50,7 @@ export default function QuoteExportScreen() {
   if (loading) {
     return (
       <View style={s.center}>
-        <ActivityIndicator size="large" color="#1e40af" />
+        <ActivityIndicator size="large" color={THEME.colors.accent} />
       </View>
     );
   }
@@ -105,19 +106,19 @@ export default function QuoteExportScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb', gap: 12 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: THEME.colors.background, gap: 12 },
   bar: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb', backgroundColor: '#fff',
+    padding: 16, borderTopWidth: 1, borderTopColor: THEME.colors.border, backgroundColor: THEME.colors.surface,
   },
   backBtn: { padding: 10 },
-  backBtnText: { color: '#1e40af', fontSize: 15, fontWeight: '600' },
-  shareBtn: { backgroundColor: '#1e40af', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 12 },
+  backBtnText: { color: THEME.colors.accent, fontSize: 15, fontWeight: '600' },
+  shareBtn: { backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, paddingHorizontal: 20, paddingVertical: 12 },
   shareBtnDisabled: { opacity: 0.5 },
   shareBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  errorText: { fontSize: 16, color: '#374151' },
-  retryBtn: { borderWidth: 1, borderColor: '#1e40af', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
-  retryText: { color: '#1e40af', fontWeight: '600' },
-  emptyText: { fontSize: 16, color: '#374151' },
-  backLinkText: { color: '#1e40af', fontSize: 15, fontWeight: '600' },
+  errorText: { fontSize: 16, color: THEME.colors.textSecondary },
+  retryBtn: { borderWidth: 1, borderColor: THEME.colors.accent, borderRadius: THEME.radius.button, paddingHorizontal: 20, paddingVertical: 10 },
+  retryText: { color: THEME.colors.accent, fontWeight: '600' },
+  emptyText: { fontSize: 16, color: THEME.colors.textSecondary },
+  backLinkText: { color: THEME.colors.accent, fontSize: 15, fontWeight: '600' },
 });

@@ -7,18 +7,19 @@ import { PriceResult, Quote, PriceIntelResult, Branch, NearbyBranch } from '../.
 import { getCountryCode, getCoords, isDomestic } from '../../services/location';
 import { nearestBranches } from '../../utils/geo';
 import branches from '../../assets/branches.json';
+import { THEME } from '../../constants/theme';
 
 const SOURCE = {
-  VENDOR_WAREHOUSE: { label: 'In Stock', color: '#16a34a', icon: '✅' },
-  MANUFACTURER_ORDER: { label: 'Order Required', color: '#d97706', icon: '🔄' },
-  BACKORDER: { label: 'Backorder', color: '#dc2626', icon: '⚠️' },
-  UNKNOWN: { label: 'Check Vendor', color: '#6b7280', icon: '❓' },
+  VENDOR_WAREHOUSE: { label: 'In Stock', color: THEME.colors.success, icon: '✅' },
+  MANUFACTURER_ORDER: { label: 'Order Required', color: THEME.colors.warning, icon: '🔄' },
+  BACKORDER: { label: 'Backorder', color: THEME.colors.danger, icon: '⚠️' },
+  UNKNOWN: { label: 'Check Vendor', color: THEME.colors.textMuted, icon: '❓' },
 };
 
 const CONF_COLORS: Record<string, string> = {
-  high: '#16a34a',
-  medium: '#d97706',
-  low: '#9ca3af',
+  high: THEME.colors.success,
+  medium: THEME.colors.warning,
+  low: THEME.colors.textMuted,
 };
 
 export default function PartDetailScreen() {
@@ -137,25 +138,25 @@ export default function PartDetailScreen() {
     <View style={s.container}>
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={THEME.colors.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={s.headerTitle} numberOfLines={1}>{id}</Text>
           <Text style={s.headerSub}>Live prices • {prices.length + (sourceResult ? 1 : 0)} vendors</Text>
         </View>
         <TouchableOpacity onPress={goToCrossref} style={{ padding: 4 }}>
-          <Ionicons name="swap-horizontal-outline" size={22} color="#fff" />
+          <Ionicons name="swap-horizontal-outline" size={22} color={THEME.colors.textPrimary} />
         </TouchableOpacity>
         <TouchableOpacity onPress={load} style={{ padding: 4 }}>
-          <Ionicons name="refresh" size={22} color="#fff" />
+          <Ionicons name="refresh" size={22} color={THEME.colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator size="large" color="#1e40af" />
+          <ActivityIndicator size="large" color={THEME.colors.accent} />
           <Text style={s.loadingText}>Scraping all 3 vendors...</Text>
-          <Text style={{ color: '#9ca3af', fontSize: 13 }}>Takes 5–15 seconds</Text>
+          <Text style={{ color: THEME.colors.textMuted, fontSize: 13 }}>Takes 5–15 seconds</Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
@@ -166,14 +167,14 @@ export default function PartDetailScreen() {
           ) : null}
           {best && (
             <View style={s.bestBanner}>
-              <Text style={{ color: '#93c5fd', fontSize: 12, fontWeight: '600' }}>💰 BEST PRICE</Text>
-              <Text style={{ color: '#fff', fontSize: 14, marginVertical: 2 }}>{best.vendorName}</Text>
-              <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800' }}>${best.price?.toFixed(2)}</Text>
+              <Text style={{ color: THEME.colors.textSecondary, fontSize: 12, fontWeight: '600' }}>💰 BEST PRICE</Text>
+              <Text style={{ color: THEME.colors.textPrimary, fontSize: 14, marginVertical: 2 }}>{best.vendorName}</Text>
+              <Text style={{ color: THEME.colors.accent, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] }}>${best.price?.toFixed(2)}</Text>
             </View>
           )}
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>All Vendor Prices</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: THEME.colors.textPrimary }}>All Vendor Prices</Text>
             {countryCode && (
               <TouchableOpacity
                 style={[s.domesticChip, domesticOnly && s.domesticChipActive]}
@@ -188,25 +189,25 @@ export default function PartDetailScreen() {
 
           {/* Source vendor card — from search results */}
           {sourceResult && (!domesticOnly || isDomestic(sourceResult.vendorSlug, countryCode)) && (
-            <View style={[s.card, { borderColor: '#1e40af', borderWidth: 1.5 }]}>
+            <View style={[s.card, { borderColor: THEME.colors.accent, borderWidth: 1.5 }]}>
               <View style={s.sourceTag}>
                 <Ionicons name="search" size={10} color="#fff" />
                 <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>FOUND IN SEARCH</Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                 <Text style={s.vendor}>{sourceResult.vendorName}</Text>
-                <View style={[s.sourceBadge, { backgroundColor: '#dcfce7' }]}>
-                  <Text style={{ color: '#16a34a', fontSize: 12, fontWeight: '600' }}>✅ In Stock</Text>
+                <View style={[s.sourceBadge, { backgroundColor: THEME.colors.successSubtle }]}>
+                  <Text style={{ color: THEME.colors.success, fontSize: 12, fontWeight: '600' }}>✅ In Stock</Text>
                 </View>
               </View>
-              {sourceResult.name ? <Text style={{ fontSize: 13, color: '#4b5563', marginBottom: 6 }} numberOfLines={2}>{sourceResult.name}</Text> : null}
+              {sourceResult.name ? <Text style={{ fontSize: 13, color: THEME.colors.textSecondary, marginBottom: 6 }} numberOfLines={2}>{sourceResult.name}</Text> : null}
               {sourceResult.price != null
                 ? <Text style={s.priceAmt}>${sourceResult.price.toFixed(2)}</Text>
-                : <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>Price on request</Text>}
+                : <Text style={{ color: THEME.colors.textMuted, fontStyle: 'italic' }}>Price on request</Text>}
               {sourceResult.vendorSku ? <Text style={[s.detail, { marginVertical: 4 }]}>SKU: {sourceResult.vendorSku}</Text> : null}
               {sourceResult.productUrl ? (
                 <TouchableOpacity style={[s.viewBtn, { marginTop: 8 }]} onPress={() => Linking.openURL(sourceResult.productUrl)}>
-                  <Ionicons name="open-outline" size={16} color="#1e40af" />
+                  <Ionicons name="open-outline" size={16} color={THEME.colors.accent} />
                   <Text style={s.viewBtnText}>View on Site</Text>
                 </TouchableOpacity>
               ) : null}
@@ -223,8 +224,8 @@ export default function PartDetailScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                   <Text style={s.vendor}>{p.vendorName}</Text>
                   {countryCode && (
-                    <View style={[s.domesticBadge, { backgroundColor: isDom ? '#dcfce7' : '#f3f4f6' }]}>
-                      <Text style={{ fontSize: 11, color: isDom ? '#16a34a' : '#9ca3af' }}>
+                    <View style={[s.domesticBadge, { backgroundColor: isDom ? THEME.colors.successSubtle : THEME.colors.surface }]}>
+                      <Text style={{ fontSize: 11, color: isDom ? THEME.colors.success : THEME.colors.textMuted }}>
                         {isDom ? '🇺🇸' : '🌍'}
                       </Text>
                     </View>
@@ -234,26 +235,26 @@ export default function PartDetailScreen() {
                   </View>
                 </View>
                 {p.price !== null
-                  ? <Text style={s.priceAmt}>${p.price.toFixed(2)} <Text style={{ fontSize: 14, fontWeight: '400', color: '#6b7280' }}>/ {p.unitOfMeasure}</Text></Text>
-                  : <Text style={{ color: '#9ca3af', fontStyle: 'italic' }}>{p.error ? 'Scrape failed' : 'Price not available'}</Text>}
+                  ? <Text style={s.priceAmt}>${p.price.toFixed(2)} <Text style={{ fontSize: 14, fontWeight: '400', color: THEME.colors.textSecondary }}>/ {p.unitOfMeasure}</Text></Text>
+                  : <Text style={{ color: THEME.colors.textMuted, fontStyle: 'italic' }}>{p.error ? 'Scrape failed' : 'Price not available'}</Text>}
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginVertical: 8 }}>
                   {p.leadTimeDays != null && <Text style={s.detail}>⏱ {p.leadTimeDays}d lead time</Text>}
                   {p.minOrderQty > 1 && <Text style={s.detail}>📦 Min {p.minOrderQty}</Text>}
                   {p.vendorSku && p.vendorSku !== id && <Text style={s.detail}>SKU: {p.vendorSku}</Text>}
                 </View>
-                <Text style={{ fontSize: 11, color: '#d1d5db', marginBottom: 10 }}>
+                <Text style={{ fontSize: 11, color: THEME.colors.textMuted, marginBottom: 10 }}>
                   Updated: {new Date(p.scrapedAt).toLocaleTimeString()}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   {p.productUrl ? (
                     <TouchableOpacity style={s.viewBtn} onPress={() => Linking.openURL(p.productUrl)}>
-                      <Ionicons name="open-outline" size={16} color="#1e40af" />
+                      <Ionicons name="open-outline" size={16} color={THEME.colors.accent} />
                       <Text style={s.viewBtnText}>View on Site</Text>
                     </TouchableOpacity>
                   ) : null}
                   <TouchableOpacity style={[s.addBtn, { flex: 1 }, !p.price && s.addBtnOff]} onPress={() => p.price && openModal(p)} disabled={!p.price}>
-                    <Ionicons name="add-circle-outline" size={18} color={p.price ? '#fff' : '#9ca3af'} />
-                    <Text style={[s.addBtnText, !p.price && { color: '#9ca3af' }]}>Add to Quote</Text>
+                    <Ionicons name="add-circle-outline" size={18} color={p.price ? '#fff' : THEME.colors.textMuted} />
+                    <Text style={[s.addBtnText, !p.price && { color: THEME.colors.textMuted }]}>Add to Quote</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -263,7 +264,7 @@ export default function PartDetailScreen() {
           {prices.length === 0 && (
             <View style={s.center}>
               <Text style={{ fontSize: 48 }}>❌</Text>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>No results from any vendor</Text>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: THEME.colors.textPrimary }}>No results from any vendor</Text>
             </View>
           )}
           {noStock && (
@@ -271,8 +272,8 @@ export default function PartDetailScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <Text style={{ fontSize: 18 }}>⚠️</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: '700', color: '#92400e', fontSize: 15 }}>No stock found at any vendor</Text>
-                  <Text style={{ color: '#92400e', fontSize: 13, marginTop: 2 }}>Find a compatible replacement part?</Text>
+                  <Text style={{ fontWeight: '700', color: THEME.colors.warning, fontSize: 15 }}>No stock found at any vendor</Text>
+                  <Text style={{ color: THEME.colors.warning, fontSize: 13, marginTop: 2 }}>Find a compatible replacement part?</Text>
                 </View>
               </View>
               <TouchableOpacity style={s.crossrefBtn} onPress={goToCrossref}>
@@ -313,12 +314,12 @@ export default function PartDetailScreen() {
               <TouchableOpacity style={s.analyzeBtn} onPress={handleAnalyzePrices} disabled={analyzingPrices}>
                 {analyzingPrices ? (
                   <>
-                    <ActivityIndicator size="small" color="#1e40af" />
+                    <ActivityIndicator size="small" color={THEME.colors.accent} />
                     <Text style={s.analyzeBtnText}>Analyzing prices...</Text>
                   </>
                 ) : (
                   <>
-                    <Ionicons name="bulb-outline" size={18} color="#1e40af" />
+                    <Ionicons name="bulb-outline" size={18} color={THEME.colors.accent} />
                     <Text style={s.analyzeBtnText}>Analyze Prices</Text>
                   </>
                 )}
@@ -332,31 +333,31 @@ export default function PartDetailScreen() {
         <View style={s.modal}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <Text style={s.modalTitle}>Add to Quote</Text>
-            <TouchableOpacity onPress={() => setShowModal(false)}><Ionicons name="close" size={24} color="#111827" /></TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowModal(false)}><Ionicons name="close" size={24} color={THEME.colors.textPrimary} /></TouchableOpacity>
           </View>
           {selectedPrice && (
             <View style={s.selectedBanner}>
-              <Text style={{ fontWeight: '700', color: '#1e40af' }}>{selectedPrice.vendorName}</Text>
-              <Text style={{ fontWeight: '700' }}>${selectedPrice.price?.toFixed(2)}</Text>
+              <Text style={{ fontWeight: '700', color: THEME.colors.accent }}>{selectedPrice.vendorName}</Text>
+              <Text style={{ fontWeight: '700', color: THEME.colors.textPrimary }}>${selectedPrice.price?.toFixed(2)}</Text>
             </View>
           )}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <Text style={{ fontSize: 16, fontWeight: '600' }}>Quantity</Text>
-            <TextInput style={s.qtyInput} value={qty} onChangeText={setQty} keyboardType="number-pad" />
+            <Text style={{ fontSize: 16, fontWeight: '600', color: THEME.colors.textPrimary }}>Quantity</Text>
+            <TextInput style={s.qtyInput} value={qty} onChangeText={setQty} keyboardType="number-pad" keyboardAppearance="dark" />
           </View>
           {quotes.filter(q => q.status === 'draft').length > 0 && (
             <>
               <Text style={s.sectionLabel}>ADD TO EXISTING QUOTE</Text>
               {quotes.filter(q => q.status === 'draft').map(q => (
                 <TouchableOpacity key={q.id} style={s.quoteRow} onPress={() => addToQuote(q.id)} disabled={saving}>
-                  <Text style={{ fontWeight: '600', color: '#111827' }}>{q.title}</Text>
-                  <Text style={{ color: '#6b7280', fontSize: 13 }}>{q.lineItems?.length || 0} items</Text>
+                  <Text style={{ fontWeight: '600', color: THEME.colors.textPrimary }}>{q.title}</Text>
+                  <Text style={{ color: THEME.colors.textSecondary, fontSize: 13 }}>{q.lineItems?.length || 0} items</Text>
                 </TouchableOpacity>
               ))}
             </>
           )}
           <Text style={[s.sectionLabel, { marginTop: 16 }]}>CREATE NEW QUOTE</Text>
-          <TextInput style={s.input} placeholder="Quote title..." value={newTitle} onChangeText={setNewTitle} />
+          <TextInput style={s.input} placeholder="Quote title..." placeholderTextColor={THEME.colors.placeholderText} value={newTitle} onChangeText={setNewTitle} keyboardAppearance="dark" />
           <TouchableOpacity style={[s.createBtn, (!newTitle.trim() || saving) && { opacity: 0.5 }]} onPress={createAndAdd} disabled={!newTitle.trim() || saving}>
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Create & Add</Text>}
           </TouchableOpacity>
@@ -367,69 +368,69 @@ export default function PartDetailScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e40af', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16, gap: 12 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  headerSub: { color: '#93c5fd', fontSize: 12 },
+  container: { flex: 1, backgroundColor: THEME.colors.background },
+  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: THEME.colors.background, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: THEME.colors.border },
+  headerTitle: { color: THEME.colors.textPrimary, fontSize: 18, fontWeight: '700' },
+  headerSub: { color: THEME.colors.textSecondary, fontSize: 12 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, padding: 32 },
-  loadingText: { fontSize: 16, fontWeight: '600', color: '#111827' },
-  imageBanner: { backgroundColor: '#fff', borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6' },
+  loadingText: { fontSize: 16, fontWeight: '600', color: THEME.colors.textPrimary },
+  imageBanner: { backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.card, padding: 12, alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: THEME.colors.border },
   partImage: { width: '100%', height: 160 },
-  bestBanner: { backgroundColor: '#1e40af', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6', elevation: 2 },
-  bestCard: { borderColor: '#1e40af', borderWidth: 2 },
-  bestTag: { backgroundColor: '#1e40af', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, alignSelf: 'flex-start', marginBottom: 8 },
-  sourceTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1e40af', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, alignSelf: 'flex-start', marginBottom: 8 },
-  vendor: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  sourceBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  priceAmt: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },
-  detail: { fontSize: 12, color: '#6b7280' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1e40af', borderRadius: 8, padding: 12, gap: 6 },
-  addBtnOff: { backgroundColor: '#f3f4f6' },
+  bestBanner: { backgroundColor: THEME.colors.surfaceElevated, borderRadius: THEME.radius.card, padding: 16, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: THEME.colors.border },
+  card: { backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.card, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: THEME.colors.border },
+  bestCard: { borderColor: THEME.colors.accent, borderWidth: 2 },
+  bestTag: { backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.badge, paddingHorizontal: 8, paddingVertical: 2, alignSelf: 'flex-start', marginBottom: 8 },
+  sourceTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.badge, paddingHorizontal: 8, paddingVertical: 2, alignSelf: 'flex-start', marginBottom: 8 },
+  vendor: { fontSize: 16, fontWeight: '700', color: THEME.colors.textPrimary },
+  sourceBadge: { borderRadius: THEME.radius.badge, paddingHorizontal: 8, paddingVertical: 3 },
+  priceAmt: { fontSize: 26, fontWeight: '800', color: THEME.colors.textPrimary, marginBottom: 4, fontVariant: ['tabular-nums'] },
+  detail: { fontSize: 12, color: THEME.colors.textSecondary },
+  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 12, gap: 6 },
+  addBtnOff: { backgroundColor: THEME.colors.surfaceElevated },
   addBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  viewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#1e40af', borderRadius: 8, padding: 12, gap: 6, paddingHorizontal: 14 },
-  viewBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 14 },
-  modal: { flex: 1, padding: 24, backgroundColor: '#fff' },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
-  selectedBanner: { backgroundColor: '#eff6ff', borderRadius: 10, padding: 12, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between' },
-  qtyInput: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, width: 80, textAlign: 'center', fontSize: 16 },
-  sectionLabel: { fontSize: 12, fontWeight: '700', color: '#6b7280', marginBottom: 8, letterSpacing: 0.5 },
-  quoteRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 14, fontSize: 15, marginBottom: 12 },
-  createBtn: { backgroundColor: '#1e40af', borderRadius: 10, padding: 16, alignItems: 'center' },
+  viewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 12, gap: 6, paddingHorizontal: 14 },
+  viewBtnText: { color: THEME.colors.accent, fontWeight: '600', fontSize: 14 },
+  modal: { flex: 1, padding: 24, backgroundColor: THEME.colors.background },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: THEME.colors.textPrimary },
+  selectedBanner: { backgroundColor: THEME.colors.surfaceElevated, borderRadius: THEME.radius.card, padding: 12, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between', borderWidth: 1, borderColor: THEME.colors.border },
+  qtyInput: { borderWidth: 1, borderColor: THEME.colors.border, borderRadius: THEME.radius.button, padding: 10, width: 80, textAlign: 'center', fontSize: 16, color: THEME.colors.textPrimary, backgroundColor: THEME.colors.surface },
+  sectionLabel: { fontSize: 12, fontWeight: '700', color: THEME.colors.textSecondary, marginBottom: 8, letterSpacing: 0.5, textTransform: 'uppercase' },
+  quoteRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderColor: THEME.colors.border, borderRadius: THEME.radius.button, marginBottom: 8 },
+  input: { borderWidth: 1, borderColor: THEME.colors.border, borderRadius: THEME.radius.button, padding: 14, fontSize: 15, marginBottom: 12, color: THEME.colors.textPrimary, backgroundColor: THEME.colors.surface },
+  createBtn: { backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 16, alignItems: 'center' },
   noStockBanner: {
-    backgroundColor: '#fef3c7', borderRadius: 12, padding: 16,
-    marginBottom: 12, borderWidth: 1, borderColor: '#fcd34d',
+    backgroundColor: THEME.colors.warningSubtle, borderRadius: THEME.radius.card, padding: 16,
+    marginBottom: 12, borderWidth: 1, borderColor: THEME.colors.warning,
   },
   crossrefBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, backgroundColor: '#d97706', borderRadius: 8, padding: 12,
+    gap: 8, backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, padding: 12,
   },
   crossrefBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   priceIntelCard: {
-    backgroundColor: '#eff6ff', borderRadius: 12, padding: 16,
-    marginBottom: 12, borderWidth: 1, borderColor: '#bfdbfe',
+    backgroundColor: THEME.colors.surfaceElevated, borderRadius: THEME.radius.card, padding: 16,
+    marginBottom: 12, borderWidth: 1, borderColor: THEME.colors.border,
   },
-  priceIntelTitle: { fontSize: 14, fontWeight: '700', color: '#1e40af', flex: 1 },
-  priceIntelText: { fontSize: 14, color: '#1e3a8a', lineHeight: 22 },
+  priceIntelTitle: { fontSize: 14, fontWeight: '700', color: THEME.colors.textPrimary, flex: 1 },
+  priceIntelText: { fontSize: 14, color: THEME.colors.textSecondary, lineHeight: 22 },
   confDot: { width: 10, height: 10, borderRadius: 5 },
-  confLabel: { fontSize: 12, color: '#6b7280', fontWeight: '600' },
+  confLabel: { fontSize: 12, color: THEME.colors.textMuted, fontWeight: '600' },
   analyzeBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, borderWidth: 1.5, borderColor: '#1e40af', borderRadius: 10,
-    padding: 14, marginBottom: 12, backgroundColor: '#fff',
+    gap: 8, borderWidth: 1.5, borderColor: THEME.colors.accent, borderRadius: THEME.radius.button,
+    padding: 14, marginBottom: 12, backgroundColor: THEME.colors.surface,
   },
-  analyzeBtnText: { color: '#1e40af', fontWeight: '600', fontSize: 15 },
-  domesticBadge: { borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2, marginLeft: 6, justifyContent: 'center' },
-  domesticChip: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#fff' },
-  domesticChipActive: { borderColor: '#1e40af', backgroundColor: '#eff6ff' },
-  domesticChipText: { fontSize: 12, color: '#6b7280', fontWeight: '600' },
-  domesticChipTextActive: { color: '#1e40af' },
-  branchesCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#f3f4f6', elevation: 2 },
-  branchesSectionTitle: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 10 },
+  analyzeBtnText: { color: THEME.colors.accent, fontWeight: '600', fontSize: 15 },
+  domesticBadge: { borderRadius: THEME.radius.badge, paddingHorizontal: 5, paddingVertical: 2, marginLeft: 6, justifyContent: 'center' },
+  domesticChip: { borderWidth: 1, borderColor: THEME.colors.border, borderRadius: THEME.radius.chip, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: THEME.colors.surface },
+  domesticChipActive: { borderColor: THEME.colors.accent, backgroundColor: THEME.colors.accentSubtle },
+  domesticChipText: { fontSize: 12, color: THEME.colors.textSecondary, fontWeight: '600' },
+  domesticChipTextActive: { color: THEME.colors.accent },
+  branchesCard: { backgroundColor: THEME.colors.surface, borderRadius: THEME.radius.card, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: THEME.colors.border },
+  branchesSectionTitle: { fontSize: 14, fontWeight: '700', color: THEME.colors.textPrimary, marginBottom: 10 },
   branchRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  branchRowBorder: { borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  branchName: { fontSize: 13, fontWeight: '600', color: '#111827' },
-  branchSub: { fontSize: 12, color: '#6b7280', marginTop: 2 },
-  branchLink: { fontSize: 13, color: '#1e40af', fontWeight: '600' },
+  branchRowBorder: { borderBottomWidth: 1, borderBottomColor: THEME.colors.border },
+  branchName: { fontSize: 13, fontWeight: '600', color: THEME.colors.textPrimary },
+  branchSub: { fontSize: 12, color: THEME.colors.textSecondary, marginTop: 2 },
+  branchLink: { fontSize: 13, color: THEME.colors.accent, fontWeight: '600' },
 });
