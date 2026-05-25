@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,11 +20,8 @@ const resizeAndEncode = async (uri: string): Promise<string> => {
   return resized.base64!;
 };
 
-type Mode = 'label' | 'part' | 'barcode';
-
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
-  const [mode, setMode] = useState<Mode>('label');
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ partNumber: string; manufacturer: string; description: string; confidence: string } | null>(null);
@@ -56,7 +52,7 @@ export default function CameraScreen() {
       const photo = await cameraRef.current.takePictureAsync({ base64: false, quality: 1 });
       setPreview(photo.uri);
       const base64 = await resizeAndEncode(photo.uri);
-      const res = await identifyPart(base64, mode);
+      const res = await identifyPart(base64, 'label');
       setResult(res);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not process image');
@@ -83,7 +79,7 @@ export default function CameraScreen() {
     try {
       setPreview(asset.uri);
       const base64 = await resizeAndEncode(asset.uri);
-      const res = await identifyPart(base64, mode);
+      const res = await identifyPart(base64, 'label');
       setResult(res);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not process image');
@@ -128,7 +124,6 @@ export default function CameraScreen() {
     router.replace({ pathname: '/(tabs)', params: { query: searchQuery } });
   };
 
-  const confidenceColor = { high: '#16a34a', medium: '#d97706', low: '#dc2626' }[result?.confidence ?? 'low'];
   const isExactMatch = result?.confidence === 'high';
   const matchLabel = isExactMatch ? 'Exact Match' : result?.confidence === 'medium' ? 'Close Match' : 'Showing Similar Parts';
 
@@ -224,73 +219,35 @@ export default function CameraScreen() {
         <View style={{ width: 32 }} />
       </View>
 
-      {/* Mode toggle */}
-      <View style={s.modeRow}>
-        <TouchableOpacity
-          style={[s.modeBtn, mode === 'label' && s.modeBtnActive]}
-          onPress={() => setMode('label')}
-        >
-          <Ionicons name="pricetag-outline" size={16} color={mode === 'label' ? '#fff' : THEME.colors.textSecondary} />
-          <Text style={[s.modeBtnText, mode === 'label' && { color: '#fff' }]}>Scan Label</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[s.modeBtn, mode === 'part' && s.modeBtnActive]}
-          onPress={() => setMode('part')}
-        >
-          <Ionicons name="cube-outline" size={16} color={mode === 'part' ? '#fff' : THEME.colors.textSecondary} />
-          <Text style={[s.modeBtnText, mode === 'part' && { color: '#fff' }]}>Identify Part</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[s.modeBtn, mode === 'barcode' && s.modeBtnActive]}
-          onPress={() => { setMode('barcode'); scanLockRef.current = false; }}
-        >
-          <Ionicons name="barcode-outline" size={16} color={mode === 'barcode' ? '#fff' : THEME.colors.textSecondary} />
-          <Text style={[s.modeBtnText, mode === 'barcode' && { color: '#fff' }]}>Barcode</Text>
-        </TouchableOpacity>
-      </View>
-
       <View style={s.cameraContainer}>
         <CameraView
           ref={cameraRef}
           style={s.camera}
           facing="back"
-          onBarcodeScanned={mode === 'barcode' ? onBarcodeScanned : undefined}
-          barcodeScannerSettings={mode === 'barcode' ? {
+          onBarcodeScanned={onBarcodeScanned}
+          barcodeScannerSettings={{
             barcodeTypes: ['code128', 'code39', 'datamatrix', 'qr', 'ean13', 'ean8', 'upc_a', 'upc_e'],
-          } : undefined}
+          }}
         />
-        {/* Targeting overlay — outside CameraView to avoid children warning */}
         <View style={s.overlay}>
-          <View style={mode === 'barcode' ? s.barcodeFrame : s.frame}>
+          <View style={s.frame}>
             <View style={[s.corner, s.tl]} />
             <View style={[s.corner, s.tr]} />
             <View style={[s.corner, s.bl]} />
             <View style={[s.corner, s.br]} />
           </View>
-          {loading && mode === 'barcode' && (
-            <ActivityIndicator size="large" color="#fff" style={{ marginTop: 16 }} />
-          )}
-          <Text style={s.hint}>
-            {mode === 'label'
-              ? 'Align the label or data tag inside the frame'
-              : mode === 'barcode'
-              ? 'Point at any barcode — it scans automatically'
-              : 'Point at the part or component'}
-          </Text>
+          {loading && <ActivityIndicator size="large" color="#fff" style={{ marginTop: 16 }} />}
+          <Text style={s.hint}>Aim at a part, label, or barcode — barcodes scan automatically</Text>
         </View>
       </View>
 
       <View style={s.captureRow}>
-        {mode !== 'barcode' && (
-          <TouchableOpacity style={s.galleryBtn} onPress={pickFromLibrary} disabled={loading}>
-            <Ionicons name="images-outline" size={26} color="#fff" />
-            <Text style={s.galleryBtnText}>Library</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={s.galleryBtn} onPress={pickFromLibrary} disabled={loading}>
+          <Ionicons name="images-outline" size={26} color="#fff" />
+          <Text style={s.galleryBtnText}>Library</Text>
+        </TouchableOpacity>
 
-        {mode === 'barcode'
-          ? <View style={s.barcodeHint}><Text style={s.barcodeHintText}>Auto-scanning...</Text></View>
-          : loading
+        {loading
           ? <ActivityIndicator size="large" color="#fff" />
           : (
             <TouchableOpacity style={s.captureBtn} onPress={capture}>
@@ -318,20 +275,11 @@ const s = StyleSheet.create({
   permBtn: { backgroundColor: THEME.colors.accent, borderRadius: THEME.radius.button, paddingHorizontal: 32, paddingVertical: 14, marginTop: 8 },
   permBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 
-  // Mode toggle
-  modeRow: { flexDirection: 'row', backgroundColor: THEME.colors.background, paddingHorizontal: 16, paddingBottom: 12, gap: 10 },
-  modeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: THEME.radius.button, borderWidth: 1, borderColor: THEME.colors.border },
-  modeBtnActive: { backgroundColor: THEME.colors.accent, borderColor: THEME.colors.accent },
-  modeBtnText: { color: THEME.colors.textSecondary, fontWeight: '600', fontSize: 14 },
-
   // Camera
   cameraContainer: { flex: 1, position: 'relative' },
   camera: { flex: 1 },
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', gap: 24 },
-  frame: { width: 280, height: 180, position: 'relative' },
-  barcodeFrame: { width: 300, height: 120, position: 'relative' },
-  barcodeHint: { alignItems: 'center' },
-  barcodeHintText: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
+  frame: { width: 280, height: 200, position: 'relative' },
   corner: { position: 'absolute', width: CORNER, height: CORNER, borderColor: '#fff', borderWidth: 3 },
   tl: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
   tr: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },

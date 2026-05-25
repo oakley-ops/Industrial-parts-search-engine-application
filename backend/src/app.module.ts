@@ -31,6 +31,12 @@ import { PriceIntelModule } from './price-intel/price-intel.module';
         connectTimeoutMS: 10000,
         retryAttempts: 15,
         retryDelay: 3000,
+        extra: {
+          // Recycle idle pool connections before Supabase pgBouncer drops them
+          idleTimeoutMillis: 10000,
+          connectionTimeoutMillis: 10000,
+          max: 5,
+        },
       }),
       inject: [ConfigService],
     }),
