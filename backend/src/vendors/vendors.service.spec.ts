@@ -142,9 +142,10 @@ describe('VendorsService.searchStream', () => {
 
     expect(events.at(-1)).toEqual({ done: true });
     const vendorEvents = events.slice(0, -1);
-    expect(vendorEvents.length).toBeGreaterThan(0);
-    vendorEvents.forEach(e => {
-      expect(e).toHaveProperty('vendor');
+    expect(vendorEvents).toHaveLength(5);
+    const slugs = vendorEvents.map((e: any) => e.vendor);
+    expect(slugs).toEqual(expect.arrayContaining(['digikey', 'oemsecrets', 'grainger', 'motion', 'mcmaster']));
+    vendorEvents.forEach((e: any) => {
       expect(Array.isArray(e.results)).toBe(true);
     });
   }, 10_000);

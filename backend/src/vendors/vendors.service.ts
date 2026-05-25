@@ -65,7 +65,17 @@ export class VendorsService {
   searchStream(query: string): Observable<MessageEvent> {
     if (!query?.trim()) return EMPTY;
 
+    if (this.demoMode) {
+      return new Observable<MessageEvent>(subscriber => {
+        const fakeResults = DEMO_SEARCH_RESULTS.map(r => ({ ...r, partNumber: query }));
+        subscriber.next({ data: { vendor: 'demo', results: fakeResults } });
+        subscriber.next({ data: { done: true } });
+        subscriber.complete();
+      });
+    }
+
     return new Observable<MessageEvent>(subscriber => {
+      let cancelled = false;
       const vendors: { slug: string; fetch: () => Promise<SearchResult[]> }[] = [
         { slug: 'digikey',    fetch: () => this.digikey.search(query) },
         { slug: 'oemsecrets', fetch: () => this.oemSecrets.search(query) },
@@ -79,18 +89,21 @@ export class VendorsService {
       for (const vendor of vendors) {
         this.searchVendorSwr(vendor.slug, query, vendor.fetch)
           .then(results => {
-            subscriber.next({ data: { vendor: vendor.slug, results } });
+            if (!cancelled) subscriber.next({ data: { vendor: vendor.slug, results } });
           })
           .catch(() => {
-            subscriber.next({ data: { vendor: vendor.slug, results: [] } });
+            if (!cancelled) subscriber.next({ data: { vendor: vendor.slug, results: [] } });
           })
           .finally(() => {
+            if (cancelled) return;
             if (--remaining === 0) {
               subscriber.next({ data: { done: true } });
               subscriber.complete();
             }
           });
       }
+
+      return () => { cancelled = true; };
     });
   }
 
