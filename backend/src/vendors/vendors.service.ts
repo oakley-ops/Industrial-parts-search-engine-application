@@ -62,6 +62,38 @@ export class VendorsService {
     return results;
   }
 
+  searchStream(query: string): Observable<MessageEvent> {
+    if (!query?.trim()) return EMPTY;
+
+    return new Observable<MessageEvent>(subscriber => {
+      const vendors: { slug: string; fetch: () => Promise<SearchResult[]> }[] = [
+        { slug: 'digikey',    fetch: () => this.digikey.search(query) },
+        { slug: 'oemsecrets', fetch: () => this.oemSecrets.search(query) },
+        { slug: 'grainger',   fetch: () => this.grainger.search(query) },
+        { slug: 'motion',     fetch: () => this.motion.search(query) },
+        { slug: 'mcmaster',   fetch: () => this.mcmaster.search(query) },
+      ];
+
+      let remaining = vendors.length;
+
+      for (const vendor of vendors) {
+        this.searchVendorSwr(vendor.slug, query, vendor.fetch)
+          .then(results => {
+            subscriber.next({ data: { vendor: vendor.slug, results } });
+          })
+          .catch(() => {
+            subscriber.next({ data: { vendor: vendor.slug, results: [] } });
+          })
+          .finally(() => {
+            if (--remaining === 0) {
+              subscriber.next({ data: { done: true } });
+              subscriber.complete();
+            }
+          });
+      }
+    });
+  }
+
   async getPricesForPart(partNumber: string): Promise<PriceResult[]> {
     if (this.demoMode) {
       this.logger.log(`[DEMO] Returning demo prices for: ${partNumber}`);

@@ -1,4 +1,5 @@
-import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards, Sse, MessageEvent } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -18,6 +19,12 @@ export class VendorsController {
   @Throttle({ default: { ttl: 30000, limit: 5 } })
   @Get('search')
   search(@Query('q') q: string) { return q ? this.svc.searchAll(q) : []; }
+
+  @Throttle({ default: { ttl: 30000, limit: 5 } })
+  @Sse('search/stream')
+  searchStream(@Query('q') q: string): Observable<MessageEvent> {
+    return this.svc.searchStream(q ?? '');
+  }
 
   @Throttle({ default: { ttl: 30000, limit: 5 } })
   @Get('prices/:partNumber')

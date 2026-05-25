@@ -120,3 +120,49 @@ describe('VendorsService.searchVendorSwr', () => {
     expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('VendorsService.searchStream', () => {
+  beforeEach(() => jest.spyOn(Date, 'now').mockReturnValue(NOW));
+  afterEach(() => jest.restoreAllMocks());
+
+  function collectStream(service: VendorsService, query: string): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      const events: any[] = [];
+      service.searchStream(query).subscribe({
+        next: (e) => events.push(e.data),
+        complete: () => resolve(events),
+        error: reject,
+      });
+    });
+  }
+
+  it('emits a vendor event per vendor and a done event last', async () => {
+    const service = makeService(makeRedis());
+    const events = await collectStream(service, 'relay');
+
+    expect(events.at(-1)).toEqual({ done: true });
+    const vendorEvents = events.slice(0, -1);
+    expect(vendorEvents.length).toBeGreaterThan(0);
+    vendorEvents.forEach(e => {
+      expect(e).toHaveProperty('vendor');
+      expect(Array.isArray(e.results)).toBe(true);
+    });
+  }, 10_000);
+
+  it('completes immediately for empty query without emitting any events', async () => {
+    const service = makeService(makeRedis());
+    const events = await collectStream(service, '');
+    expect(events).toHaveLength(0);
+  });
+
+  it('emits results:[] for a vendor that throws and still emits done', async () => {
+    const service = makeService(makeRedis());
+    jest.spyOn((service as any).digikey, 'search').mockRejectedValue(new Error('DK API down'));
+
+    const events = await collectStream(service, 'relay');
+
+    expect(events.at(-1)).toEqual({ done: true });
+    const dkEvent = events.find((e: any) => e.vendor === 'digikey');
+    expect(dkEvent?.results).toEqual([]);
+  }, 10_000);
+});
