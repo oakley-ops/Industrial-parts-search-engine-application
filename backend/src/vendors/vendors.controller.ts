@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, UseGuards, Sse, MessageEvent } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards, Sse, MessageEvent, ParseIntPipe } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -40,12 +40,13 @@ export class VendorsController {
     return this.svc.lookupBarcode(barcode);
   }
 
+  @Throttle({ default: { ttl: 30000, limit: 5 } })
   @Get('digikey/price-for-quantity')
   async getDigiKeyPriceForQuantity(
     @Query('partNumber') partNumber: string,
-    @Query('quantity') quantity: string,
+    @Query('quantity', ParseIntPipe) quantity: number,
   ) {
-    const unitPrice = await this.svc.getDigiKeyPriceForQuantity(partNumber, parseInt(quantity, 10));
+    const unitPrice = await this.svc.getDigiKeyPriceForQuantity(partNumber, quantity);
     return { unitPrice };
   }
 }
