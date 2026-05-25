@@ -118,34 +118,50 @@ export class DigiKeyService {
     if (!this.clientId || !this.clientSecret) return [];
     try {
       const token = await this.getToken();
-      const { data } = await axios.post<DkKeywordResponse>(
-        `${this.apiBase}/keyword`,
-        {
-          Keywords: query,
-          RecordCount: 50,
-          RecordStartPosition: 0,
-          Sort: { SortOption: 'SortByUnitPrice', Direction: 'Descending', SortParameterId: 0 },
-        },
-        { headers: { ...this.authHeaders(token), 'Content-Type': 'application/json' }, timeout: 10000 },
-      );
-      if (!data?.Products) return [];
+      const [keywordProducts, detailsProducts] = await Promise.all([
+        axios.post<DkKeywordResponse>(
+          `${this.apiBase}/keyword`,
+          {
+            Keywords: query,
+            RecordCount: 50,
+            RecordStartPosition: 0,
+            Sort: { SortOption: 'SortByUnitPrice', Direction: 'Descending', SortParameterId: 0 },
+          },
+          { headers: { ...this.authHeaders(token), 'Content-Type': 'application/json' }, timeout: 10000 },
+        ).then(r => r.data?.Products ?? []).catch(() => []),
+        this.productDetailsSearch(query, token),
+      ]);
 
-      return data.Products
+      // Merge: product details first (more exact), keyword results appended; dedup by MPN
+      const seen = new Set<string>();
+      const merged: DkKeywordProduct[] = [];
+      for (const p of [...detailsProducts, ...keywordProducts]) {
+        if (p.ManufacturerProductNumber && !seen.has(p.ManufacturerProductNumber)) {
+          seen.add(p.ManufacturerProductNumber);
+          merged.push(p);
+        }
+      }
+
+      return merged
         .filter(p => p.ManufacturerProductNumber && p.UnitPrice != null)
-        .sort((a, b) => (b.UnitPrice ?? 0) - (a.UnitPrice ?? 0))
         .map(p => ({
-        vendorSlug: 'digikey',
-        vendorName: 'DigiKey',
-        partNumber: query,
-        vendorSku: p.DigiKeyPartNumber,
-        name: `${p.Manufacturer.Name} ${p.ManufacturerProductNumber}`.trim(),
-        description: [p.Description.DetailedDescription, p.Description.ProductDescription]
-          .filter(Boolean).join(' — '),
-        price: p.UnitPrice ?? null,
-        inStock: p.QuantityAvailable > 0,
-        productUrl: p.ProductUrl,
-        imageUrl: p.PrimaryPhoto || undefined,
-      }));
+          p,
+          score: this.scoreRelevance(query, `${p.Manufacturer.Name} ${p.ManufacturerProductNumber}`),
+        }))
+        .sort((a, b) => b.score - a.score || (b.p.UnitPrice ?? 0) - (a.p.UnitPrice ?? 0))
+        .map(({ p }) => ({
+          vendorSlug: 'digikey',
+          vendorName: 'DigiKey',
+          partNumber: query,
+          vendorSku: p.DigiKeyPartNumber,
+          name: `${p.Manufacturer.Name} ${p.ManufacturerProductNumber}`.trim(),
+          description: [p.Description.DetailedDescription, p.Description.ProductDescription]
+            .filter(Boolean).join(' — '),
+          price: p.UnitPrice ?? null,
+          inStock: p.QuantityAvailable > 0,
+          productUrl: p.ProductUrl,
+          imageUrl: p.PrimaryPhoto || undefined,
+        }));
     } catch (err) {
       this.logger.error(`DigiKey search failed: ${err.message}`);
       return [];
