@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, MessageEvent } from '@nestjs/common';
+import { Observable, EMPTY } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '../redis/redis.service';
 import { GraingerScraper } from './scrapers/grainger.scraper';
@@ -8,6 +9,9 @@ import { OemSecretsService } from './scrapers/oemsecrets.service';
 import { DigiKeyService } from './scrapers/digikey.service';
 import { PriceResult, SearchResult } from './scrapers/base.scraper';
 import { DEMO_SEARCH_RESULTS, DEMO_PRICE_RESULTS } from './demo-data';
+
+const FRESH_TTL = 300;  // seconds — serve from cache, no refresh
+const STALE_TTL = 900;  // seconds — serve from cache + background refresh; beyond this is a miss
 
 @Injectable()
 export class VendorsService {
@@ -89,6 +93,39 @@ export class VendorsService {
     const keys = await this.redis.keys(pattern);
     for (const key of keys) await this.redis.del(key);
     return { cleared: keys.length };
+  }
+
+  private async searchVendorSwr(
+    slug: string,
+    query: string,
+    fetchFn: () => Promise<SearchResult[]>,
+  ): Promise<SearchResult[]> {
+    const key = `search:${slug}:${query.toLowerCase().replace(/\W+/g, '_')}`;
+    try {
+      const raw = await this.redis.get(key);
+      if (raw) {
+        const { results, cachedAt } = JSON.parse(raw) as { results: SearchResult[]; cachedAt: number };
+        const ageSeconds = (Date.now() - cachedAt) / 1000;
+        if (ageSeconds < FRESH_TTL) return results;
+        if (ageSeconds < STALE_TTL) {
+          this.refreshInBackground(key, fetchFn);
+          return results;
+        }
+      }
+    } catch {
+      // Redis down — fall through to live fetch
+    }
+    const results = await fetchFn();
+    await this.redis.setex(key, STALE_TTL, JSON.stringify({ results, cachedAt: Date.now() }));
+    return results;
+  }
+
+  private refreshInBackground(key: string, fetchFn: () => Promise<SearchResult[]>): void {
+    fetchFn()
+      .then(results =>
+        this.redis.setex(key, STALE_TTL, JSON.stringify({ results, cachedAt: Date.now() }))
+      )
+      .catch(() => {});
   }
 
   private async cachedPrice(vendorSlug: string, partNumber: string, fetchFn: () => Promise<PriceResult>): Promise<PriceResult> {
