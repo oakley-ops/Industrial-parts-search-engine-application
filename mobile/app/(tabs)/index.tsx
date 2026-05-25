@@ -51,7 +51,7 @@ export default function SearchScreen() {
     setLoading(true);
     setSearched(true);
     setInStockFirst(true);
-    addToSearchHistory(q.trim()).then(() => getSearchHistory().then(setSearchHistory));
+    addToSearchHistory(q.trim()).then(() => getSearchHistory().then(setSearchHistory)).catch(() => {});
 
     cleanupRef.current = openSearchStream(
       q.trim(),

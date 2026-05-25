@@ -11,9 +11,11 @@ export function openSearchStream(
   onError: () => void,
 ): () => void {
   let es: InstanceType<typeof EventSource> | null = null;
+  let closed = false;
 
   SecureStore.getItemAsync('access_token')
     .then(token => {
+      if (closed) return;
       es = new EventSource(
         `${API_URL}/vendors/search/stream?q=${encodeURIComponent(query)}`,
         { headers: { Authorization: `Bearer ${token ?? ''}` } },
@@ -41,7 +43,7 @@ export function openSearchStream(
         es?.close();
       });
     })
-    .catch(() => onError());
+    .catch(() => { if (!closed) onError(); });
 
-  return () => es?.close();
+  return () => { closed = true; es?.close(); };
 }
