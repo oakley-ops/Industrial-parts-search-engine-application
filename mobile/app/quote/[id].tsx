@@ -156,10 +156,10 @@ export default function QuoteDetailScreen() {
       Alert.alert('Error', 'Could not update quantity');
       return;
     }
-    if (item.vendorSlug === 'digikey' && item.vendorSku) {
+    if (item.vendorSlug === 'digikey' && item.partNumber) {
       const qId = quote!.id;
       const iId = item.id;
-      getDigiKeyPriceForQuantity(item.vendorSku, qty)
+      getDigiKeyPriceForQuantity(item.partNumber, qty)
         .then(async (newPrice) => {
           if (newPrice !== null) {
             await updateLineItemPrice(qId, iId, newPrice);
