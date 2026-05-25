@@ -99,6 +99,20 @@ export class DigiKeyService {
     return queryWords.filter(w => nameWords.has(w)).length;
   }
 
+  private async productDetailsSearch(query: string, token: string): Promise<DkKeywordProduct[]> {
+    try {
+      const { data } = await axios.get<DkProductDetailsResponse>(
+        `${this.apiBase}/${encodeURIComponent(query)}/productdetails`,
+        { headers: { ...this.authHeaders(token), 'Content-Type': 'application/json' }, timeout: 10000 },
+      );
+      if (data?.Products?.length) return data.Products;
+      if (data?.Product) return [data.Product];
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
   async search(query: string): Promise<SearchResult[]> {
     if (!this.clientId || !this.clientSecret) return [];
     try {
