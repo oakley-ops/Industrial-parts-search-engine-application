@@ -228,4 +228,32 @@ export class DigiKeyService {
       return [];
     }
   }
+
+  async getPriceForQuantity(partNumber: string, quantity: number): Promise<number | null> {
+    if (!this.clientId || !this.clientSecret) return null;
+    try {
+      const token = await this.getToken();
+      const { data } = await axios.get<DkPricingResponse>(
+        `${this.apiBase}/${encodeURIComponent(partNumber)}/pricing`,
+        { headers: this.authHeaders(token), params: { limit: 5 }, timeout: 10000 },
+      );
+      if (!data?.ProductPricings?.length) return null;
+      for (const product of data.ProductPricings) {
+        for (const variation of (product.ProductVariations ?? [])) {
+          const tiers = [...(variation.StandardPricing ?? [])]
+            .sort((a, b) => a.BreakQuantity - b.BreakQuantity);
+          if (!tiers.length) continue;
+          let selected = tiers[0];
+          for (const tier of tiers) {
+            if (tier.BreakQuantity <= quantity) selected = tier;
+          }
+          return selected.UnitPrice;
+        }
+      }
+      return null;
+    } catch (err) {
+      this.logger.error(`DigiKey getPriceForQuantity failed: ${(err as Error)?.message ?? err}`);
+      return null;
+    }
+  }
 }

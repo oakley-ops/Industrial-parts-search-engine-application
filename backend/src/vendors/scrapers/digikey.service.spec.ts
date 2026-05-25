@@ -168,3 +168,70 @@ describe('DigiKeyService.search', () => {
     expect(result).toEqual([]);
   });
 });
+
+describe('DigiKeyService.getPriceForQuantity', () => {
+  let service: DigiKeyService;
+
+  const makePricingResponse = (tiers: { BreakQuantity: number; UnitPrice: number }[]) => ({
+    data: {
+      ProductPricings: [{
+        ManufacturerProductNumber: 'LM385',
+        ProductVariations: [{
+          DigiKeyProductNumber: 'LM385M3-1.2/NOPB-ND',
+          QuantityAvailableforPackageType: 100,
+          MinimumOrderQuantity: 1,
+          PackageType: { Id: 1, Name: 'Cut Tape' },
+          StandardPricing: tiers,
+        }],
+        QuantityAvailable: 100,
+        ProductUrl: 'https://digikey.com/lm385',
+        ManufacturerLeadWeeks: '',
+      }],
+    },
+  });
+
+  beforeEach(() => {
+    service = makeService();
+    jest.clearAllMocks();
+    jest.spyOn(service as any, 'getToken').mockResolvedValue('test-token');
+    jest.spyOn(service as any, 'clientId', 'get').mockReturnValue('id');
+    jest.spyOn(service as any, 'clientSecret', 'get').mockReturnValue('secret');
+  });
+
+  it('returns qty-1 price when quantity is 1', async () => {
+    mockAxios.get.mockResolvedValueOnce(makePricingResponse([
+      { BreakQuantity: 1, UnitPrice: 1.63 },
+      { BreakQuantity: 10, UnitPrice: 1.40 },
+      { BreakQuantity: 100, UnitPrice: 1.05 },
+    ]));
+    expect(await service.getPriceForQuantity('LM385', 1)).toBe(1.63);
+  });
+
+  it('returns 100-unit tier price when quantity is 100', async () => {
+    mockAxios.get.mockResolvedValueOnce(makePricingResponse([
+      { BreakQuantity: 1, UnitPrice: 1.63 },
+      { BreakQuantity: 10, UnitPrice: 1.40 },
+      { BreakQuantity: 100, UnitPrice: 1.05 },
+    ]));
+    expect(await service.getPriceForQuantity('LM385', 100)).toBe(1.05);
+  });
+
+  it('returns qty-1 price when quantity falls between breaks (qty=7)', async () => {
+    mockAxios.get.mockResolvedValueOnce(makePricingResponse([
+      { BreakQuantity: 1, UnitPrice: 1.63 },
+      { BreakQuantity: 10, UnitPrice: 1.40 },
+      { BreakQuantity: 100, UnitPrice: 1.05 },
+    ]));
+    expect(await service.getPriceForQuantity('LM385', 7)).toBe(1.63);
+  });
+
+  it('returns null when credentials are missing', async () => {
+    const noCredService = makeService();
+    expect(await noCredService.getPriceForQuantity('LM385', 10)).toBeNull();
+  });
+
+  it('returns null when api call fails', async () => {
+    mockAxios.get.mockRejectedValueOnce(new Error('network error'));
+    expect(await service.getPriceForQuantity('LM385', 10)).toBeNull();
+  });
+});
