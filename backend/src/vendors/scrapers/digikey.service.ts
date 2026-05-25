@@ -103,12 +103,13 @@ export class DigiKeyService {
     try {
       const { data } = await axios.get<DkProductDetailsResponse>(
         `${this.apiBase}/${encodeURIComponent(query)}/productdetails`,
-        { headers: { ...this.authHeaders(token), 'Content-Type': 'application/json' }, timeout: 10000 },
+        { headers: this.authHeaders(token), timeout: 10000 },
       );
-      if (data?.Products?.length) return data.Products;
+      if (Array.isArray(data?.Products)) return data.Products;
       if (data?.Product) return [data.Product];
       return [];
-    } catch {
+    } catch (err) {
+      this.logger.warn(`productDetailsSearch failed for "${query}": ${err?.message}`);
       return [];
     }
   }

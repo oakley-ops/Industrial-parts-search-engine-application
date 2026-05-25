@@ -54,6 +54,10 @@ describe('DigiKeyService.productDetailsSearch', () => {
 
     const result = await (service as any).productDetailsSearch('LM358', 'tok');
 
+    expect(mockAxios.get).toHaveBeenCalledWith(
+      expect.stringContaining('/LM358/productdetails'),
+      expect.any(Object),
+    );
     expect(result).toEqual(products);
   });
 
