@@ -138,3 +138,4 @@ export const analyzePrices = async (
 };
 
 export default api;
+export { openSearchStream } from './searchStream';
