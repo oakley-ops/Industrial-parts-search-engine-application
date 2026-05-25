@@ -195,8 +195,9 @@ export class DigiKeyService {
     }
   }
 
-  private async fetchPricingData(partNumber: string, token: string): Promise<DkPricingResponse | null> {
+  private async fetchPricingData(partNumber: string): Promise<DkPricingResponse | null> {
     try {
+      const token = await this.getToken();
       const { data } = await axios.get<DkPricingResponse>(
         `${this.apiBase}/${encodeURIComponent(partNumber)}/pricing`,
         { headers: this.authHeaders(token), params: { limit: 5 }, timeout: 10000 },
@@ -210,8 +211,7 @@ export class DigiKeyService {
 
   async getPrices(partNumber: string): Promise<PriceResult[]> {
     if (!this.clientId || !this.clientSecret) return [];
-    const token = await this.getToken();
-    const data = await this.fetchPricingData(partNumber, token);
+    const data = await this.fetchPricingData(partNumber);
     if (!data?.ProductPricings) return [];
     return data.ProductPricings.flatMap(p =>
       (p.ProductVariations ?? []).map(variation => ({
@@ -235,8 +235,7 @@ export class DigiKeyService {
 
   async getPriceForQuantity(partNumber: string, quantity: number): Promise<number | null> {
     if (!this.clientId || !this.clientSecret) return null;
-    const token = await this.getToken();
-    const data = await this.fetchPricingData(partNumber, token);
+    const data = await this.fetchPricingData(partNumber);
     if (!data?.ProductPricings?.length) return null;
     for (const product of data.ProductPricings) {
       for (const variation of (product.ProductVariations ?? [])) {
