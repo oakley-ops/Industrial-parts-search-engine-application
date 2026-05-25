@@ -157,10 +157,12 @@ export default function QuoteDetailScreen() {
       return;
     }
     if (item.vendorSlug === 'digikey' && item.vendorSku) {
+      const qId = quote!.id;
+      const iId = item.id;
       getDigiKeyPriceForQuantity(item.vendorSku, qty)
         .then(async (newPrice) => {
           if (newPrice !== null) {
-            await updateLineItemPrice(quote!.id, item.id, newPrice);
+            await updateLineItemPrice(qId, iId, newPrice);
             load();
           }
         })
