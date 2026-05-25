@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Image, Modal } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Image, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { openSearchStream } from '../../services/api';
@@ -142,6 +142,7 @@ export default function SearchScreen() {
   });
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={s.container}>
       <View style={s.searchRow}>
         <View style={s.searchBox}>
@@ -337,6 +338,7 @@ export default function SearchScreen() {
         />
       )}
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 

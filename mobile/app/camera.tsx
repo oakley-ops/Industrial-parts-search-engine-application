@@ -3,13 +3,13 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, Alert, Image,
 } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { identifyPart } from '../services/api';
+import { identifyPart, lookupBarcode } from '../services/api';
 import { THEME } from '../constants/theme';
 
 const resizeAndEncode = async (uri: string): Promise<string> => {
@@ -21,7 +21,7 @@ const resizeAndEncode = async (uri: string): Promise<string> => {
   return resized.base64!;
 };
 
-type Mode = 'label' | 'part';
+type Mode = 'label' | 'part' | 'barcode';
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -30,6 +30,7 @@ export default function CameraScreen() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ partNumber: string; manufacturer: string; description: string; confidence: string } | null>(null);
   const cameraRef = useRef<CameraView>(null);
+  const scanLockRef = useRef(false);
 
   if (!permission) return <View style={s.container} />;
 
@@ -92,7 +93,33 @@ export default function CameraScreen() {
     }
   };
 
-  const reset = () => { setPreview(null); setResult(null); };
+  const reset = () => { setPreview(null); setResult(null); scanLockRef.current = false; };
+
+  const onBarcodeScanned = async ({ data: barcode }: BarcodeScanningResult) => {
+    if (scanLockRef.current || loading) return;
+    scanLockRef.current = true;
+    setLoading(true);
+    try {
+      const part = await lookupBarcode(barcode);
+      if (!part) {
+        // barcode not in DigiKey — fall back to searching the raw value
+        router.replace({ pathname: '/(tabs)', params: { query: barcode } });
+        return;
+      }
+      setResult({
+        partNumber: part.vendorSku || part.partNumber,
+        manufacturer: part.name,
+        description: part.description,
+        confidence: 'high',
+      });
+      setPreview('barcode');
+    } catch {
+      Alert.alert('Lookup failed', 'Could not identify this barcode. Try scanning again.');
+      scanLockRef.current = false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const searchQuery = result?.partNumber || result?.description || '';
 
@@ -117,7 +144,9 @@ export default function CameraScreen() {
           <View style={{ width: 32 }} />
         </View>
 
-        <Image source={{ uri: preview }} style={s.previewImage} resizeMode="cover" />
+        {preview !== 'barcode' && (
+          <Image source={{ uri: preview! }} style={s.previewImage} resizeMode="cover" />
+        )}
 
         {loading && (
           <View style={s.analyzingBox}>
@@ -211,32 +240,56 @@ export default function CameraScreen() {
           <Ionicons name="cube-outline" size={16} color={mode === 'part' ? '#fff' : THEME.colors.textSecondary} />
           <Text style={[s.modeBtnText, mode === 'part' && { color: '#fff' }]}>Identify Part</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.modeBtn, mode === 'barcode' && s.modeBtnActive]}
+          onPress={() => { setMode('barcode'); scanLockRef.current = false; }}
+        >
+          <Ionicons name="barcode-outline" size={16} color={mode === 'barcode' ? '#fff' : THEME.colors.textSecondary} />
+          <Text style={[s.modeBtnText, mode === 'barcode' && { color: '#fff' }]}>Barcode</Text>
+        </TouchableOpacity>
       </View>
 
-      <CameraView ref={cameraRef} style={s.camera} facing="back">
+      <CameraView
+        ref={cameraRef}
+        style={s.camera}
+        facing="back"
+        onBarcodeScanned={mode === 'barcode' ? onBarcodeScanned : undefined}
+        barcodeScannerSettings={mode === 'barcode' ? {
+          barcodeTypes: ['code128', 'code39', 'datamatrix', 'qr', 'ean13', 'ean8', 'upc_a', 'upc_e'],
+        } : undefined}
+      >
         {/* Targeting overlay */}
         <View style={s.overlay}>
-          <View style={s.frame}>
+          <View style={mode === 'barcode' ? s.barcodeFrame : s.frame}>
             <View style={[s.corner, s.tl]} />
             <View style={[s.corner, s.tr]} />
             <View style={[s.corner, s.bl]} />
             <View style={[s.corner, s.br]} />
           </View>
+          {loading && mode === 'barcode' && (
+            <ActivityIndicator size="large" color="#fff" style={{ marginTop: 16 }} />
+          )}
           <Text style={s.hint}>
             {mode === 'label'
               ? 'Align the label or data tag inside the frame'
+              : mode === 'barcode'
+              ? 'Point at any barcode — it scans automatically'
               : 'Point at the part or component'}
           </Text>
         </View>
       </CameraView>
 
       <View style={s.captureRow}>
-        <TouchableOpacity style={s.galleryBtn} onPress={pickFromLibrary} disabled={loading}>
-          <Ionicons name="images-outline" size={26} color="#fff" />
-          <Text style={s.galleryBtnText}>Library</Text>
-        </TouchableOpacity>
+        {mode !== 'barcode' && (
+          <TouchableOpacity style={s.galleryBtn} onPress={pickFromLibrary} disabled={loading}>
+            <Ionicons name="images-outline" size={26} color="#fff" />
+            <Text style={s.galleryBtnText}>Library</Text>
+          </TouchableOpacity>
+        )}
 
-        {loading
+        {mode === 'barcode'
+          ? <View style={s.barcodeHint}><Text style={s.barcodeHintText}>Auto-scanning...</Text></View>
+          : loading
           ? <ActivityIndicator size="large" color="#fff" />
           : (
             <TouchableOpacity style={s.captureBtn} onPress={capture}>
@@ -274,6 +327,9 @@ const s = StyleSheet.create({
   camera: { flex: 1 },
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 24 },
   frame: { width: 280, height: 180, position: 'relative' },
+  barcodeFrame: { width: 300, height: 120, position: 'relative' },
+  barcodeHint: { alignItems: 'center' },
+  barcodeHintText: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
   corner: { position: 'absolute', width: CORNER, height: CORNER, borderColor: '#fff', borderWidth: 3 },
   tl: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
   tr: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },

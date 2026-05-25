@@ -34,4 +34,9 @@ export class VendorsController {
   getVendorPrice(@Param('vendorSlug') v: string, @Param('partNumber') p: string) {
     return this.svc.getPriceFromVendor(v, p);
   }
+
+  @Get('barcode/:barcode')
+  lookupBarcode(@Param('barcode') barcode: string) {
+    return this.svc.lookupBarcode(barcode);
+  }
 }

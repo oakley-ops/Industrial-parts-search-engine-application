@@ -35,6 +35,10 @@ export const getPricesForPart = async (partNumber: string) => {
   const { data } = await api.get(`/vendors/prices/${encodeURIComponent(partNumber)}`);
   return data;
 };
+export const lookupBarcode = async (barcode: string) => {
+  const { data } = await api.get(`/vendors/barcode/${encodeURIComponent(barcode)}`);
+  return data as { partNumber: string; vendorSku: string; name: string; description: string; price: number | null; inStock: boolean; productUrl: string; imageUrl?: string } | null;
+};
 
 // Quotes
 export const getQuotes = async () => { const { data } = await api.get('/quotes'); return data; };

@@ -117,6 +117,34 @@ export class DigiKeyService {
     }
   }
 
+  async lookupBarcode(barcode: string): Promise<SearchResult | null> {
+    if (!this.clientId || !this.clientSecret) return null;
+    try {
+      const token = await this.getToken();
+      const { data } = await axios.get(
+        `https://api.digikey.com/barcoding/v4/product/${encodeURIComponent(barcode)}`,
+        { headers: this.authHeaders(token), timeout: 10000 },
+      );
+      const p = data.Product;
+      if (!p) return null;
+      return {
+        vendorSlug: 'digikey',
+        vendorName: 'DigiKey',
+        partNumber: p.ManufacturerProductNumber ?? barcode,
+        vendorSku: p.DigiKeyPartNumber ?? '',
+        name: `${p.Manufacturer?.Name ?? ''} ${p.ManufacturerProductNumber ?? ''}`.trim(),
+        description: p.Description?.DetailedDescription || p.Description?.ProductDescription || '',
+        price: p.UnitPrice ?? null,
+        inStock: (p.QuantityAvailable ?? 0) > 0,
+        productUrl: p.ProductUrl ?? '',
+        imageUrl: p.PrimaryPhoto || undefined,
+      };
+    } catch (err) {
+      this.logger.error(`DigiKey barcode lookup failed: ${err.message}`);
+      return null;
+    }
+  }
+
   async getPrices(partNumber: string): Promise<PriceResult[]> {
     if (!this.clientId || !this.clientSecret) return [];
     try {
