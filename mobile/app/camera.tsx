@@ -249,16 +249,17 @@ export default function CameraScreen() {
         </TouchableOpacity>
       </View>
 
-      <CameraView
-        ref={cameraRef}
-        style={s.camera}
-        facing="back"
-        onBarcodeScanned={mode === 'barcode' ? onBarcodeScanned : undefined}
-        barcodeScannerSettings={mode === 'barcode' ? {
-          barcodeTypes: ['code128', 'code39', 'datamatrix', 'qr', 'ean13', 'ean8', 'upc_a', 'upc_e'],
-        } : undefined}
-      >
-        {/* Targeting overlay */}
+      <View style={s.cameraContainer}>
+        <CameraView
+          ref={cameraRef}
+          style={s.camera}
+          facing="back"
+          onBarcodeScanned={mode === 'barcode' ? onBarcodeScanned : undefined}
+          barcodeScannerSettings={mode === 'barcode' ? {
+            barcodeTypes: ['code128', 'code39', 'datamatrix', 'qr', 'ean13', 'ean8', 'upc_a', 'upc_e'],
+          } : undefined}
+        />
+        {/* Targeting overlay — outside CameraView to avoid children warning */}
         <View style={s.overlay}>
           <View style={mode === 'barcode' ? s.barcodeFrame : s.frame}>
             <View style={[s.corner, s.tl]} />
@@ -277,7 +278,7 @@ export default function CameraScreen() {
               : 'Point at the part or component'}
           </Text>
         </View>
-      </CameraView>
+      </View>
 
       <View style={s.captureRow}>
         {mode !== 'barcode' && (
@@ -324,8 +325,9 @@ const s = StyleSheet.create({
   modeBtnText: { color: THEME.colors.textSecondary, fontWeight: '600', fontSize: 14 },
 
   // Camera
+  cameraContainer: { flex: 1, position: 'relative' },
   camera: { flex: 1 },
-  overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 24 },
+  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', gap: 24 },
   frame: { width: 280, height: 180, position: 'relative' },
   barcodeFrame: { width: 300, height: 120, position: 'relative' },
   barcodeHint: { alignItems: 'center' },
