@@ -98,7 +98,9 @@ export class DigiKeyService {
       );
       if (!data?.Products) return [];
 
-      return data.Products.map(p => ({
+      return data.Products
+        .filter(p => p.DigiKeyPartNumber && p.ManufacturerProductNumber && p.UnitPrice != null)
+        .map(p => ({
         vendorSlug: 'digikey',
         vendorName: 'DigiKey',
         partNumber: query,
