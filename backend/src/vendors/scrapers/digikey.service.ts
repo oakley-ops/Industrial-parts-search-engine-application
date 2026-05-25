@@ -152,7 +152,7 @@ export class DigiKeyService {
         .map(({ p }) => ({
           vendorSlug: 'digikey',
           vendorName: 'DigiKey',
-          partNumber: query,
+          partNumber: p.ManufacturerProductNumber,
           vendorSku: p.DigiKeyPartNumber,
           name: `${p.Manufacturer.Name} ${p.ManufacturerProductNumber}`.trim(),
           description: [p.Description.DetailedDescription, p.Description.ProductDescription]
@@ -163,7 +163,7 @@ export class DigiKeyService {
           imageUrl: p.PrimaryPhoto || undefined,
         }));
     } catch (err) {
-      this.logger.error(`DigiKey search failed: ${err.message}`);
+      this.logger.error(`DigiKey search failed: ${(err as Error)?.message ?? err}`);
       return [];
     }
   }
