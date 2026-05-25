@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } fr
 import { useLocalSearchParams, router } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
 import { getQuote, getQuotePdfUri } from '../../services/api';
 import { Quote } from '../../types';
 import { buildQuoteHtml } from '../../utils/quoteHtml';
@@ -33,7 +34,14 @@ export default function QuoteExportScreen() {
     if (!quote) return;
     setSharing(true);
     try {
-      const uri = await getQuotePdfUri(quote.id);
+      let uri: string;
+      try {
+        uri = await getQuotePdfUri(quote.id);
+      } catch {
+        // Server PDF unavailable — fall back to local rendering
+        const { uri: localUri } = await Print.printToFileAsync({ html: buildQuoteHtml(quote) });
+        uri = localUri;
+      }
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
         dialogTitle: quote.title,

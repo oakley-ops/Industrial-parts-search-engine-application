@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import * as FileSystem from 'expo-file-system/legacy';
 import { CrossrefResult, ProcurementConversation, ProcurementMessage, ProcurementPart, PriceIntelResult } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
@@ -63,14 +64,14 @@ export const updateLineItemQty = async (quoteId: string, itemId: string, quantit
   const { data } = await api.patch(`/quotes/${quoteId}/items/${itemId}`, { quantity }); return data;
 };
 export const getQuotePdfUri = async (id: string): Promise<string> => {
-  const FileSystem = await import('expo-file-system');
   const token = await SecureStore.getItemAsync('access_token');
-  const uri = `${FileSystem.cacheDirectory}quote-${id}.pdf`;
+  const dest = `${FileSystem.cacheDirectory}quote-${id}.pdf`;
   const result = await FileSystem.downloadAsync(
     `${API_URL}/quotes/${id}/pdf`,
-    uri,
+    dest,
     { headers: { Authorization: `Bearer ${token}` } },
   );
+  if (result.status !== 200) throw new Error(`Server returned ${result.status}`);
   return result.uri;
 };
 

@@ -5,11 +5,13 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getQuote, updateQuote, updateQuoteStatus, duplicateQuote,
   removeLineItem, updateLineItemQty, deleteQuote, getQuotePdfUri,
 } from '../../services/api';
+import { buildQuoteHtml } from '../../utils/quoteHtml';
 import { Quote, QuoteLineItem } from '../../types';
 import { THEME } from '../../constants/theme';
 
@@ -155,12 +157,20 @@ export default function QuoteDetailScreen() {
   };
 
   const handleExport = async () => {
+    if (!quote) return;
     setExporting(true);
     try {
-      const uri = await getQuotePdfUri(id);
+      let uri: string;
+      try {
+        uri = await getQuotePdfUri(id);
+      } catch {
+        // Server PDF unavailable — fall back to local rendering
+        const { uri: localUri } = await Print.printToFileAsync({ html: buildQuoteHtml(quote) });
+        uri = localUri;
+      }
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
-        dialogTitle: quote?.title || 'Quote',
+        dialogTitle: quote.title,
         UTI: 'com.adobe.pdf',
       });
     } catch {
