@@ -195,65 +195,61 @@ export class DigiKeyService {
     }
   }
 
-  async getPrices(partNumber: string): Promise<PriceResult[]> {
-    if (!this.clientId || !this.clientSecret) return [];
+  private async fetchPricingData(partNumber: string, token: string): Promise<DkPricingResponse | null> {
     try {
-      const token = await this.getToken();
       const { data } = await axios.get<DkPricingResponse>(
         `${this.apiBase}/${encodeURIComponent(partNumber)}/pricing`,
         { headers: this.authHeaders(token), params: { limit: 5 }, timeout: 10000 },
       );
-      if (!data?.ProductPricings) return [];
-
-      return data.ProductPricings.flatMap(p =>
-        (p.ProductVariations ?? []).map(variation => ({
-          vendorSlug: 'digikey',
-          vendorName: 'DigiKey',
-          vendorSku: variation.DigiKeyProductNumber,
-          price: this.qty1Price(variation),
-          currency: 'USD',
-          quantityOnHand: variation.QuantityAvailableforPackageType ?? p.QuantityAvailable ?? 0,
-          source: (variation.QuantityAvailableforPackageType > 0 || p.QuantityAvailable > 0)
-            ? 'VENDOR_WAREHOUSE' as const : 'UNKNOWN' as const,
-          leadTimeDays: p.ManufacturerLeadWeeks ? parseInt(p.ManufacturerLeadWeeks) * 7 : null,
-          minOrderQty: variation.MinimumOrderQuantity || 1,
-          unitOfMeasure: variation.PackageType?.Name || 'each',
-          productUrl: p.ProductUrl,
-          inStock: p.QuantityAvailable > 0,
-          scrapedAt: new Date().toISOString(),
-        }))
-      );
+      return data ?? null;
     } catch (err) {
-      this.logger.error(`DigiKey prices failed: ${(err as Error)?.message ?? err}`);
-      return [];
+      this.logger.error(`DigiKey pricing fetch failed for "${partNumber}": ${(err as Error)?.message ?? err}`);
+      return null;
     }
+  }
+
+  async getPrices(partNumber: string): Promise<PriceResult[]> {
+    if (!this.clientId || !this.clientSecret) return [];
+    const token = await this.getToken();
+    const data = await this.fetchPricingData(partNumber, token);
+    if (!data?.ProductPricings) return [];
+    return data.ProductPricings.flatMap(p =>
+      (p.ProductVariations ?? []).map(variation => ({
+        vendorSlug: 'digikey',
+        vendorName: 'DigiKey',
+        vendorSku: variation.DigiKeyProductNumber,
+        price: this.qty1Price(variation),
+        currency: 'USD',
+        quantityOnHand: variation.QuantityAvailableforPackageType ?? p.QuantityAvailable ?? 0,
+        source: (variation.QuantityAvailableforPackageType > 0 || p.QuantityAvailable > 0)
+          ? 'VENDOR_WAREHOUSE' as const : 'UNKNOWN' as const,
+        leadTimeDays: p.ManufacturerLeadWeeks ? parseInt(p.ManufacturerLeadWeeks) * 7 : null,
+        minOrderQty: variation.MinimumOrderQuantity || 1,
+        unitOfMeasure: variation.PackageType?.Name || 'each',
+        productUrl: p.ProductUrl,
+        inStock: p.QuantityAvailable > 0,
+        scrapedAt: new Date().toISOString(),
+      }))
+    );
   }
 
   async getPriceForQuantity(partNumber: string, quantity: number): Promise<number | null> {
     if (!this.clientId || !this.clientSecret) return null;
-    try {
-      const token = await this.getToken();
-      const { data } = await axios.get<DkPricingResponse>(
-        `${this.apiBase}/${encodeURIComponent(partNumber)}/pricing`,
-        { headers: this.authHeaders(token), params: { limit: 5 }, timeout: 10000 },
-      );
-      if (!data?.ProductPricings?.length) return null;
-      for (const product of data.ProductPricings) {
-        for (const variation of (product.ProductVariations ?? [])) {
-          const tiers = [...(variation.StandardPricing ?? [])]
-            .sort((a, b) => a.BreakQuantity - b.BreakQuantity);
-          if (!tiers.length) continue;
-          let selected = tiers[0];
-          for (const tier of tiers) {
-            if (tier.BreakQuantity <= quantity) selected = tier;
-          }
-          return selected.UnitPrice;
+    const token = await this.getToken();
+    const data = await this.fetchPricingData(partNumber, token);
+    if (!data?.ProductPricings?.length) return null;
+    for (const product of data.ProductPricings) {
+      for (const variation of (product.ProductVariations ?? [])) {
+        const tiers = [...(variation.StandardPricing ?? [])]
+          .sort((a, b) => a.BreakQuantity - b.BreakQuantity);
+        if (!tiers.length) continue;
+        let selected = tiers[0];
+        for (const tier of tiers) {
+          if (tier.BreakQuantity <= quantity) selected = tier;
         }
+        return selected.UnitPrice;
       }
-      return null;
-    } catch (err) {
-      this.logger.error(`DigiKey getPriceForQuantity failed: ${(err as Error)?.message ?? err}`);
-      return null;
     }
+    return null;
   }
 }

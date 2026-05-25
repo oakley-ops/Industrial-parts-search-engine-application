@@ -227,7 +227,9 @@ describe('DigiKeyService.getPriceForQuantity', () => {
 
   it('returns null when credentials are missing', async () => {
     const noCredService = makeService();
-    expect(await noCredService.getPriceForQuantity('LM385', 10)).toBeNull();
+    const result = await noCredService.getPriceForQuantity('LM385', 10);
+    expect(result).toBeNull();
+    expect(mockAxios.get).not.toHaveBeenCalled();
   });
 
   it('returns null when api call fails', async () => {
