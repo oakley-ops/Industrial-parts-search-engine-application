@@ -93,7 +93,7 @@ export class DigiKeyService {
       const token = await this.getToken();
       const { data } = await axios.post<DkKeywordResponse>(
         `${this.apiBase}/keyword`,
-        { Keywords: query, RecordCount: 10, RecordStartPosition: 0 },
+        { Keywords: query, RecordCount: 25, RecordStartPosition: 0 },
         { headers: { ...this.authHeaders(token), 'Content-Type': 'application/json' }, timeout: 10000 },
       );
       if (!data?.Products) return [];
