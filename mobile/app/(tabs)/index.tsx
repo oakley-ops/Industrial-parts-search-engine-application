@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Image, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, FlatList, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Image, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { openSearchStream } from '../../services/api';
