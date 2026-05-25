@@ -2,8 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSearchHistory, addToSearchHistory, clearSearchHistory } from './searchHistory';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
-  getItem: jest.fn(),
-  setItem: jest.fn(),
+  default: { getItem: jest.fn(), setItem: jest.fn() },
 }));
 
 const mockGet = AsyncStorage.getItem as jest.Mock;
