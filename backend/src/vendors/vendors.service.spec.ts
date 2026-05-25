@@ -55,6 +55,10 @@ describe('VendorsService.searchVendorSwr', () => {
 
     expect(result).toEqual(cachedData);
     expect((service as any).refreshInBackground).toHaveBeenCalledTimes(1);
+    expect((service as any).refreshInBackground).toHaveBeenCalledWith(
+      'search:digikey:relay',
+      fetchFn,
+    );
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
@@ -99,5 +103,20 @@ describe('VendorsService.searchVendorSwr', () => {
     const result = await (service as any).searchVendorSwr('digikey', 'relay', fetchFn);
 
     expect(result).toEqual(fresh);
+  });
+
+  it('Redis throws on setex: returns live results without throwing', async () => {
+    const fresh = [{ name: 'Cached After Failure' }];
+    const redis = makeRedis({
+      get: jest.fn().mockResolvedValue(null),
+      setex: jest.fn().mockRejectedValue(new Error('ECONNREFUSED')),
+    });
+    const service = makeService(redis);
+    const fetchFn = jest.fn().mockResolvedValue(fresh);
+
+    const result = await (service as any).searchVendorSwr('digikey', 'relay', fetchFn);
+
+    expect(result).toEqual(fresh);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 });

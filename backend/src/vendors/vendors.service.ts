@@ -100,7 +100,7 @@ export class VendorsService {
     query: string,
     fetchFn: () => Promise<SearchResult[]>,
   ): Promise<SearchResult[]> {
-    const key = `search:${slug}:${query.toLowerCase().replace(/\W+/g, '_')}`;
+    const key = `search:${slug}:${query.trim().toLowerCase().replace(/\W+/g, '_')}`;
     try {
       const raw = await this.redis.get(key);
       if (raw) {
@@ -116,7 +116,11 @@ export class VendorsService {
       // Redis down — fall through to live fetch
     }
     const results = await fetchFn();
-    await this.redis.setex(key, STALE_TTL, JSON.stringify({ results, cachedAt: Date.now() }));
+    try {
+      await this.redis.setex(key, STALE_TTL, JSON.stringify({ results, cachedAt: Date.now() }));
+    } catch {
+      // Redis down — results still returned, cache write skipped
+    }
     return results;
   }
 
