@@ -13,6 +13,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.client = new Redis(this.config.get('redis.url'), {
       tls: this.config.get('redis.tls') ? {} : undefined,
       maxRetriesPerRequest: 3,
+      connectTimeout: 10000,
+      enableOfflineQueue: false,
+      retryStrategy: (times) => Math.min(times * 200, 3000),
+      // Reconnect automatically when the cloud provider drops idle connections
+      reconnectOnError: (err) => /ETIMEDOUT|ECONNRESET|ECONNREFUSED/.test(err.message),
     });
     this.client.on('connect', () => this.logger.log('Redis connected'));
     this.client.on('error', (err) => this.logger.error(`Redis: ${err.message}`));
