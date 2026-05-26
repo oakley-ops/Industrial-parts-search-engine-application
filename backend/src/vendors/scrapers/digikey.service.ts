@@ -34,7 +34,7 @@ interface DkKeywordProduct {
   ProductUrl: string;
   ManufacturerLeadWeeks: string;
   MinimumOrderQuantity: number;
-  PrimaryPhoto: string;
+  PhotoUrl: string;
 }
 
 interface DkKeywordResponse {
@@ -159,7 +159,7 @@ export class DigiKeyService {
           price: p.UnitPrice ?? null,
           inStock: p.QuantityAvailable > 0,
           productUrl: p.ProductUrl,
-          imageUrl: p.PrimaryPhoto || undefined,
+          imageUrl: p.PhotoUrl || undefined,
         }));
     } catch (err) {
       this.logger.error(`DigiKey search failed: ${(err as Error)?.message ?? err}`);
@@ -187,7 +187,7 @@ export class DigiKeyService {
         price: p.UnitPrice ?? null,
         inStock: (p.QuantityAvailable ?? 0) > 0,
         productUrl: p.ProductUrl ?? '',
-        imageUrl: p.PrimaryPhoto || undefined,
+        imageUrl: p.PhotoUrl || undefined,
       };
     } catch (err) {
       this.logger.error(`DigiKey barcode lookup failed: ${(err as Error)?.message ?? err}`);
