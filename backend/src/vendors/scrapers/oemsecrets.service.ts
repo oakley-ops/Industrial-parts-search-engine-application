@@ -96,7 +96,7 @@ export class OemSecretsService {
       }
 
       return Array.from(byDistributor.values()).map(item => ({
-        vendorSlug: this.vendorSlug(item.distributor),
+        vendorSlug: 'oemsecrets',
         vendorName: item.distributor.distributor_name,
         partNumber: query,
         vendorSku: item.sku,

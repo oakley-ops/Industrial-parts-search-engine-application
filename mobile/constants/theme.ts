@@ -17,6 +17,7 @@ export const THEME = {
     warningSubtle: '#2d1a00',
     vendorMotion: '#f97316',
     vendorDigikey: '#3b82f6',
+    vendorOemSecrets: '#10b981',
     vendorDefault: '#64748b',
     inputBg: '#1e293b',
     inputBorder: '#475569',
@@ -35,5 +36,6 @@ export const THEME = {
 export function vendorColor(slug: string): string {
   if (slug === 'motion') return THEME.colors.vendorMotion;
   if (slug === 'digikey') return THEME.colors.vendorDigikey;
+  if (slug === 'oemsecrets') return THEME.colors.vendorOemSecrets;
   return THEME.colors.vendorDefault;
 }
